@@ -1,47 +1,253 @@
-# Svelte + TS + Vite
+# 🌟 Borrowhood
 
-This template should help get you started developing with Svelte and TypeScript in Vite.
+![Decentralized Lending](screenshots/Decentrlised-Lending.png)
 
-## Recommended IDE Setup
+**Borrowhood** is a modern, decentralized lending platform built on the Stellar blockchain. It enables users to lend and borrow cryptocurrency assets seamlessly through an intuitive interface with no traditional banking requirements.
 
-[VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
+## ✨ Features
 
-## Need an official Svelte framework?
+### 🔐 Secure Authentication
 
-Check out [SvelteKit](https://github.com/sveltejs/kit#readme), which is also powered by Vite. Deploy anywhere with its serverless-first approach and adapt to various platforms, with out of the box support for TypeScript, SCSS, and Less, and easily-added support for mdsvex, GraphQL, PostCSS, Tailwind CSS, and more.
+- **Passkey Authentication**: Passwordless login using modern passkey technology
+- **No Seed Phrases**: Forget complicated seed phrases or private keys
+- **Phishing Resistant**: Enhanced security against common attacks
 
-## Technical considerations
+### 💰 Lending & Borrowing
 
-**Why use this over SvelteKit?**
+- **Earn Interest**: Competitive APY rates on deposited assets
+- **Flexible Loan Terms**: Choose from 1 month, 3 months, or custom durations
+- **Real-time Interest Calculation**: See your earnings before you commit
+- **Multiple Assets**: Support for XLM, USDC and more (expandable)
 
-- It brings its own routing solution which might not be preferable for some users.
-- It is first and foremost a framework that just happens to use Vite under the hood, not a Vite app.
+### 👛 Wallet Management
 
-This template contains as little as possible to get started with Vite + TypeScript + Svelte, while taking into account the developer experience with regards to HMR and intellisense. It demonstrates capabilities on par with the other `create-vite` templates and is a good starting point for beginners dipping their toes into a Vite + Svelte project.
+- **Asset Dashboard**: View all your holdings in one place
+- **Transaction History**: Track your lending, borrowing, and transfer activities
+- **Send Tokens**: Easily transfer assets to other users
+- **Real-time Balances**: Always up-to-date asset information
 
-Should you later need the extended capabilities and extensibility provided by SvelteKit, the template has been structured similarly to SvelteKit so that it is easy to migrate.
+### 📊 Portfolio Dashboard
 
-**Why `global.d.ts` instead of `compilerOptions.types` inside `jsconfig.json` or `tsconfig.json`?**
+- **Performance Tracking**: Monitor your lending and borrowing positions
+- **Interest Accrual**: Watch your earnings grow in real-time
+- **Detailed Analytics**: Understand your crypto portfolio better
 
-Setting `compilerOptions.types` shuts out all other types not explicitly listed in the configuration. Using triple-slash references keeps the default TypeScript setting of accepting type information from the entire workspace, while also adding `svelte` and `vite/client` type information.
+## 📸 Screenshots
 
-**Why include `.vscode/extensions.json`?**
+### Home Page
 
-Other templates indirectly recommend extensions via the README, but this file allows VS Code to prompt the user to install the recommended extension upon opening the project.
+![Decentralized Lending](screenshots/Decentrlised-Lending.png)
 
-**Why enable `allowJs` in the TS template?**
+### Why Borrowhood
 
-While `allowJs: false` would indeed prevent the use of `.js` files in the project, it does not prevent the use of JavaScript syntax in `.svelte` files. In addition, it would force `checkJs: false`, bringing the worst of both worlds: not being able to guarantee the entire codebase is TypeScript, and also having worse typechecking for the existing JavaScript. In addition, there are valid use cases in which a mixed codebase may be relevant.
+![Why Borrowhood](screenshots/Why-Borrowhood.png)
 
-**Why is HMR not preserving my local component state?**
+### How Borrowhood Works
 
-HMR state preservation comes with a number of gotchas! It has been disabled by default in both `svelte-hmr` and `@sveltejs/vite-plugin-svelte` due to its often surprising behavior. You can read the details [here](https://github.com/rixo/svelte-hmr#svelte-hmr).
+![How Borrowhood Works](screenshots/how-borrowhood-works-image.png)
 
-If you have state that's important to retain within a component, consider creating an external store which would not be replaced by HMR.
+### Dashboard
 
-```ts
-// store.ts
-// An extremely simple external store
-import { writable } from 'svelte/store'
-export default writable(0)
+![Dashboard](screenshots/dashboard.png)
+
+### Lending Interface
+
+![Lending Interface](screenshots/lend.png)
+
+### Borrowing Interface
+
+![Borrowing Interface](screenshots/borrow.png)
+
+### Wallet Management
+
+![Wallet](screenshots/wallet.png)
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js (v16+)
+- npm or yarn
+
+### Installation
+
+1. **Clone the repository**
+
+   ```bash
+   git clone https://github.com/yourusername/borrowhood.git
+   cd borrowhood
+   ```
+
+2. **Install dependencies**
+
+   ```bash
+   npm install
+   # or with yarn
+   yarn install
+   ```
+
+3. **Set up environment variables**
+   Create a `.env` file in the root directory and add:
+
+   ```
+   VITE_rpcUrl=https://your-stellar-rpc-url
+   VITE_networkPassphrase=your-network-passphrase
+   VITE_walletWasmHash=your-wallet-wasm-hash
+   VITE_launchtubeUrl=your-launchtube-url
+   VITE_launchtubeJwt=your-launchtube-jwt
+   VITE_mercuryProjectName=your-mercury-project-name
+   VITE_mercuryUrl=your-mercury-url
+   VITE_mercuryJwt=your-mercury-jwt
+   VITE_nativeContractId=your-native-contract-id
+   ```
+
+4. **Run the development server**
+
+   ```bash
+   npm run dev
+   # or with yarn
+   yarn dev
+   ```
+
+5. **Open your browser**
+   Navigate to `http://localhost:5173` to see the application.
+
+### Building for Production
+
+To create a production build:
+
+```bash
+npm run build
+# or with yarn
+yarn build
 ```
+
+## 💻 Tech Stack
+
+- **Frontend**: Svelte 5
+- **Language**: TypeScript
+- **Build Tool**: Vite
+- **Blockchain**: Stellar Network
+- **Authentication**: Passkey-kit for passwordless auth
+- **Styling**: CSS with animation effects
+
+## 🔍 Project Structure
+
+- `/src`: Source code for the application
+  - `/src/lib`: Common utilities and components
+  - `/src/assets`: Static assets
+- `/public`: Public assets
+- `/screenshots`: Application screenshots
+
+## 🛠️ Development Guide
+
+### Adding New Features
+
+To add new features to Borrowhood:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Implement your changes
+4. Add tests if applicable
+5. Commit your changes (`git commit -m 'Add some amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+### Code Style
+
+We use ESLint and Prettier for code formatting. Please ensure your code follows our style guidelines:
+
+```bash
+npm run check
+```
+
+### Working with the Stellar Network
+
+Borrowhood interacts with the Stellar blockchain through the `@stellar/stellar-sdk` package. Key components:
+
+- `src/lib/common.ts`: Contains blockchain interaction utilities
+- Authentication is handled through `passkey-kit`
+- Transactions are signed and submitted through the Stellar network
+
+## 📝 Usage Examples
+
+### Creating a Wallet
+
+1. Click the "Sign Up/Login" button in the top right
+2. Select "Create a New Account"
+3. Follow the prompts to create your passkey
+
+### Lending Assets
+
+1. Navigate to the "Lend/Borrow" tab
+2. Select "LEND" mode
+3. Choose your asset (XLM, USDC, etc.)
+4. Enter the amount you wish to lend
+5. Select a duration (1 month, 3 months, or custom)
+6. Review the interest you'll earn
+7. Click the "Lend" button to confirm
+
+### Borrowing Assets
+
+1. Navigate to the "Lend/Borrow" tab
+2. Select "BORROW" mode
+3. Choose your asset
+4. Enter the amount you wish to borrow
+5. Select a duration
+6. Review the interest you'll pay
+7. Click the "Borrow" button to confirm
+
+### Sending Tokens
+
+1. Navigate to the "Wallet" tab
+2. Click "Send Tokens"
+3. Select the token to send
+4. Enter the recipient's address
+5. Enter the amount
+6. Click "Send" to confirm the transaction
+
+## 🤝 Contributing
+
+Contributions are what make the open-source community an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+
+See the [Development Guide](#%EF%B8%8F-development-guide) section for how to get started with contributing.
+
+## 📄 License
+
+Distributed under the MIT License. See below for more information.
+
+```
+MIT License
+
+Copyright (c) 2023-2024 Borrowhood
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+## 🙏 Acknowledgements
+
+- [Stellar Network](https://www.stellar.org/) for providing the blockchain infrastructure
+- [Passkey-kit](https://github.com/passkeyrpc/passkey-kit) for authentication
+- [Svelte](https://svelte.dev/) for the reactive UI framework
+- [Vite](https://vitejs.dev/) for the lightning-fast development experience
+- All our contributors and community members!
+
+---
+
+**Borrowhood** - _Decentralized Lending for Everyone_ - [https://borrowhood.com](https://borrowhood.com)
