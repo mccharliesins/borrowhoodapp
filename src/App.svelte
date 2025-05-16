@@ -58,7 +58,7 @@
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    padding: 0 1.2rem;
+    padding: 0 2.5rem;
     height: 54px;
     background: linear-gradient(90deg, #1a1333 0%, #231942 100%);
     box-shadow: 0 2px 16px 0 rgba(30, 0, 60, 0.12);
@@ -76,14 +76,14 @@
       0 0 8px #6f7cff,
       0 0 16px #6f7cff44;
     user-select: none;
-    margin-right: 2.5rem;
+    margin-right: 2rem;
     font-family: "New Rocker", cursive;
     white-space: nowrap;
     min-width: 0;
   }
   nav {
     display: flex;
-    gap: 1.2rem;
+    gap: 2rem;
     align-items: center;
     flex-shrink: 1;
     justify-content: flex-start;
@@ -130,9 +130,10 @@
   .right-group {
     display: flex;
     align-items: center;
-    gap: 1.2rem;
+    gap: 1.8rem;
     min-width: 0;
     flex-shrink: 0;
+    margin-left: 2.5rem;
   }
   .login-btn {
     font-family: "Outfit", sans-serif;
@@ -165,17 +166,17 @@
   }
   @media (max-width: 900px) {
     .navbar {
-      padding: 0 0.5rem;
+      padding: 0 1rem;
       height: 48px;
       margin: 0 auto 1rem auto;
     }
     nav {
-      gap: 0.7rem;
+      gap: 1rem;
       margin-left: 0.2rem;
     }
     .logo {
       font-size: 1.3rem;
-      margin-right: 1.2rem;
+      margin-right: 1rem;
     }
     .login-btn {
       font-size: 1rem;
@@ -188,14 +189,17 @@
       height: 48px;
       align-items: flex-start;
       gap: 0.5rem;
+      padding: 0 0.5rem;
     }
     nav {
       width: 100%;
       justify-content: flex-start;
       gap: 0.5rem;
+      margin-left: 0;
     }
     .right-group {
       align-self: flex-end;
+      margin-left: 0;
     }
   }
   .hero {
