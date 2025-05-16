@@ -52,6 +52,119 @@
         <button class="hero-btn secondary">Lend & Earn</button>
       </div>
     </section>
+
+    <!-- Why Borrowhood Section -->
+    <section class="why-section">
+      <h2 class="section-title">Why Borrowhood?</h2>
+      <div class="why-grid">
+        <div class="why-item">
+          <span class="why-icon">🌎</span>
+          <h3>Everywhere</h3>
+          <p>
+            Access financial services from anywhere in the world with just an
+            internet connection.
+          </p>
+        </div>
+        <div class="why-item">
+          <span class="why-icon">⚡</span>
+          <h3>Instant Access</h3>
+          <p>
+            Get funded immediately after approval with no lengthy processing
+            times.
+          </p>
+        </div>
+        <div class="why-item">
+          <span class="why-icon">🏦</span>
+          <h3>No Bank Required</h3>
+          <p>
+            Skip the traditional banking requirements and access loans directly.
+          </p>
+        </div>
+        <div class="why-item">
+          <span class="why-icon">💰</span>
+          <h3>Micro Loans</h3>
+          <p>
+            Borrow as little as $10 - perfect for small, urgent needs without
+            the overhead.
+          </p>
+        </div>
+        <div class="why-item">
+          <span class="why-icon">🚀</span>
+          <h3>Fast & Efficient</h3>
+          <p>
+            Our blockchain-based system processes transactions in seconds, not
+            days.
+          </p>
+        </div>
+        <div class="why-item">
+          <span class="why-icon">📈</span>
+          <h3>Earn While Borrowing</h3>
+          <p>
+            Your collateral earns interest even while you have an active loan.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- How Borrowhood Works Section -->
+    <section class="how-section">
+      <h2 class="section-title">How Borrowhood Works</h2>
+      <div class="how-grid">
+        <div class="how-item">
+          <span class="how-icon">🔐</span>
+          <h3>Simple Secure Access</h3>
+          <p>
+            Sign in with Stellar passkey authentication. No complicated wallet
+            setup required.
+          </p>
+        </div>
+        <div class="how-item">
+          <span class="how-icon">💰</span>
+          <h3>Deposit & Earn</h3>
+          <p>
+            Lend your cryptocurrency and earn interest automatically with
+            competitive rates.
+          </p>
+        </div>
+        <div class="how-item">
+          <span class="how-icon">🔄</span>
+          <h3>Borrow Assets</h3>
+          <p>
+            Use your crypto as collateral to borrow other cryptocurrencies when
+            you need them.
+          </p>
+        </div>
+        <div class="how-item">
+          <span class="how-icon">📱</span>
+          <h3>Mobile-Friendly</h3>
+          <p>
+            Access your assets and manage your loans from any device, especially
+            optimized for mobile.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Call to Action Section -->
+    <section class="cta-section">
+      <h2 class="cta-title">Ready to Experience the Future of Finance?</h2>
+      <p class="cta-desc">
+        Join thousands of users in third-world countries who are already
+        leveraging Borrowhood for financial freedom.
+      </p>
+      <div class="cta-actions">
+        <button
+          class="cta-btn primary"
+          on:click={() => (window.location.href = "/lendborrow")}
+          >Start Lending</button
+        >
+        <button
+          class="cta-btn secondary"
+          on:click={() => (window.location.href = "/dashboard")}
+          >View Dashboard</button
+        >
+      </div>
+    </section>
   {/if}
   <!-- Main content placeholder for other tabs -->
 </main>
@@ -450,6 +563,141 @@
       font-size: 1.3rem;
     }
     .auth-desc {
+      font-size: 1rem;
+    }
+  }
+  .why-section,
+  .how-section {
+    margin: 3.5rem auto 0 auto;
+    max-width: 1100px;
+    padding: 0 1.2rem;
+  }
+  .section-title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 2.2rem;
+    color: #c471f5;
+    letter-spacing: -1px;
+  }
+  .why-grid,
+  .how-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 2.2rem 2.5rem;
+    justify-content: center;
+  }
+  .why-item,
+  .how-item {
+    background: rgba(30, 20, 60, 0.55);
+    border-radius: 1.2rem;
+    padding: 2.1rem 1.3rem 1.7rem 1.3rem;
+    box-shadow: 0 2px 16px 0 #0002;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    color: #fff;
+    min-height: 210px;
+    transition:
+      box-shadow 0.18s,
+      background 0.18s;
+  }
+  .why-item:hover,
+  .how-item:hover {
+    box-shadow: 0 4px 32px 0 #a259ff33;
+    background: rgba(60, 30, 90, 0.7);
+  }
+  .why-icon,
+  .how-icon {
+    font-size: 2.2rem;
+    margin-bottom: 1.1rem;
+    display: block;
+  }
+  .why-item h3,
+  .how-item h3 {
+    font-size: 1.18rem;
+    font-weight: 700;
+    margin-bottom: 0.7rem;
+    color: #8ecaff;
+  }
+  .why-item p,
+  .how-item p {
+    font-size: 1.05rem;
+    color: #d1cbe7;
+    font-weight: 400;
+    margin: 0;
+  }
+  .cta-section {
+    margin: 4.5rem auto 0 auto;
+    max-width: 700px;
+    padding: 0 1.2rem 4rem 1.2rem;
+    text-align: center;
+  }
+  .cta-title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #c471f5;
+    margin-bottom: 1.1rem;
+  }
+  .cta-desc {
+    font-size: 1.15rem;
+    color: #d1cbe7;
+    margin-bottom: 2.2rem;
+  }
+  .cta-actions {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .cta-btn {
+    font-family: "Outfit", sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    padding: 0.9rem 2.5rem;
+    border: none;
+    border-radius: 2rem;
+    cursor: pointer;
+    transition:
+      background 0.2s,
+      box-shadow 0.2s,
+      transform 0.13s;
+    box-shadow: 0 2px 16px 0 #0002;
+    margin-bottom: 0.5rem;
+  }
+  .cta-btn.primary {
+    background: linear-gradient(90deg, #a259ff 0%, #38b6ff 100%);
+    color: #fff;
+  }
+  .cta-btn.primary:hover {
+    background: linear-gradient(90deg, #38b6ff 0%, #a259ff 100%);
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: 0 4px 20px 0 #a259ff55;
+  }
+  .cta-btn.secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    border: 1.5px solid #a259ff;
+  }
+  .cta-btn.secondary:hover {
+    background: rgba(162, 89, 255, 0.18);
+    color: #fff;
+    border-color: #38b6ff;
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: 0 4px 20px 0 #38b6ff55;
+  }
+  @media (max-width: 700px) {
+    .why-grid,
+    .how-grid {
+      grid-template-columns: 1fr;
+      gap: 1.2rem;
+    }
+    .cta-section {
+      padding: 0 0.2rem 2rem 0.2rem;
+    }
+    .cta-btn {
+      padding: 0.7rem 1.3rem;
       font-size: 1rem;
     }
   }
