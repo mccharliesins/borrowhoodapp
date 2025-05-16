@@ -7,6 +7,7 @@
     native,
     fundPubkey,
     fundSigner,
+    initializeWallet,
   } from "./lib/common";
   import { Keypair } from "@stellar/stellar-sdk";
   // No additional logic needed for static navbar
@@ -70,13 +71,35 @@
   let contractId: string = "";
   let walletPublicKey: string = "";
   let isLoggedIn = false;
+  let walletInitialized = false;
 
-  const storedKeyId = localStorage.getItem("sp:keyId");
-  if (storedKeyId) {
-    connect(storedKeyId);
-  }
+  onMount(async () => {
+    // Initialize the wallet system
+    try {
+      await initializeWallet();
+      walletInitialized = true;
+
+      // Check if user is already logged in
+      const storedKeyId = localStorage.getItem("sp:keyId");
+      if (storedKeyId) {
+        connect(storedKeyId);
+      }
+
+      // Fetch initial price
+      fetchPrice();
+    } catch (err) {
+      console.error("Failed to initialize wallet:", err);
+    }
+  });
 
   async function register() {
+    if (!walletInitialized) {
+      alert(
+        "Wallet system is still initializing. Please try again in a moment."
+      );
+      return;
+    }
+
     const user = prompt("Give this passkey a name");
     if (!user) return;
     try {
@@ -91,7 +114,15 @@
       alert(err.message);
     }
   }
+
   async function connect(keyId_?: string) {
+    if (!walletInitialized) {
+      console.warn(
+        "Wallet system is still initializing. Connection attempt will be delayed."
+      );
+      return;
+    }
+
     try {
       const result = await account.connectWallet({
         keyId: keyId_,
@@ -106,6 +137,7 @@
       alert(err.message);
     }
   }
+
   function reset() {
     localStorage.removeItem("sp:keyId");
     contractId = "";
@@ -129,7 +161,6 @@
   }
 
   $: selectedToken, fetchPrice();
-  onMount(fetchPrice);
 
   $: amountUsd = amount && !isNaN(+amount) ? (+amount * price).toFixed(2) : "";
   $: showMax = lendBorrowMode === "LEND";
@@ -177,6 +208,10 @@
       <div
         class="nav-tab {activeTab === tab ? 'active' : ''}"
         on:click={() => (activeTab = tab)}
+        on:keydown={(e) => e.key === "Enter" && (activeTab = tab)}
+        tabindex="0"
+        role="tab"
+        aria-selected={activeTab === tab}
       >
         {tab}
         <span class="underline {activeTab === tab ? 'active' : ''}"></span>
@@ -510,11 +545,18 @@
   <div
     class="modal-overlay"
     on:click={closeAuthModal}
-    tabindex="-1"
     on:keydown={handleKeydown}
+    tabindex="-1"
+    role="dialog"
   >
-    <div class="auth-modal" on:click|stopPropagation>
-      <h2 class="auth-title">Login/Sign Up</h2>
+    <div
+      class="auth-modal"
+      on:click|stopPropagation
+      on:keydown|stopPropagation
+      role="dialog"
+      aria-labelledby="auth-title"
+    >
+      <h2 id="auth-title" class="auth-title">Login/Sign Up</h2>
       <p class="auth-desc">
         Use your Passkey for secure, passwordless access. Passkeys are safer,
         faster, and protect you from phishing. Enjoy seamless login and account
@@ -538,10 +580,24 @@
 {/if}
 
 {#if showLoanModal && modalAsset}
-  <div class="modal-overlay" on:click={closeLoanModal} tabindex="-1">
-    <div class="loan-modal" on:click|stopPropagation>
+  <div
+    class="modal-overlay"
+    on:click={closeLoanModal}
+    on:keydown={(e) => e.key === "Escape" && closeLoanModal()}
+    tabindex="-1"
+    role="dialog"
+  >
+    <div
+      class="loan-modal"
+      on:click|stopPropagation
+      on:keydown|stopPropagation
+      role="dialog"
+      aria-labelledby="loan-modal-title"
+    >
       <div class="loan-modal-header">
-        <span class="loan-modal-title">Withdraw {modalAsset.name}</span>
+        <span id="loan-modal-title" class="loan-modal-title"
+          >Withdraw {modalAsset.name}</span
+        >
         <button class="loan-modal-close" on:click={closeLoanModal}
           >&times;</button
         >

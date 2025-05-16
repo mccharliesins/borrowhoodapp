@@ -25,25 +25,49 @@ export const fundKeypair = new Promise<Keypair>(async (resolve) => {
 
     resolve(keypair)
 })
-export const fundPubkey = (await fundKeypair).publicKey()
-export const fundSigner = basicNodeSigner(await fundKeypair, import.meta.env.VITE_networkPassphrase)
 
-export const account = new PasskeyKit({
-    rpcUrl: import.meta.env.VITE_rpcUrl,
-    networkPassphrase: import.meta.env.VITE_networkPassphrase,
-    walletWasmHash: import.meta.env.VITE_walletWasmHash,
-});
-export const server = new PasskeyServer({
-    rpcUrl: import.meta.env.VITE_rpcUrl,
-    launchtubeUrl: import.meta.env.VITE_launchtubeUrl,
-    launchtubeJwt: import.meta.env.VITE_launchtubeJwt,
-    mercuryProjectName: import.meta.env.VITE_mercuryProjectName,
-    mercuryUrl: import.meta.env.VITE_mercuryUrl,
-    mercuryJwt: import.meta.env.VITE_mercuryJwt,
-});
+// Initialize these separately without using top-level await
+export let fundPubkey: string;
+export let fundSigner: any;
+export let account: PasskeyKit;
+export let server: PasskeyServer;
+export let sac: SACClient;
+export let native: any;
 
-export const sac = new SACClient({
-    rpcUrl: import.meta.env.VITE_rpcUrl,
-    networkPassphrase: import.meta.env.VITE_networkPassphrase,
-});
-export const native = sac.getSACClient(import.meta.env.VITE_nativeContractId)
+// Set up an initialization function
+export async function initializeWallet() {
+    const keypair = await fundKeypair;
+    fundPubkey = keypair.publicKey();
+    fundSigner = basicNodeSigner(keypair, import.meta.env.VITE_networkPassphrase);
+    
+    account = new PasskeyKit({
+        rpcUrl: import.meta.env.VITE_rpcUrl,
+        networkPassphrase: import.meta.env.VITE_networkPassphrase,
+        walletWasmHash: import.meta.env.VITE_walletWasmHash,
+    });
+    
+    server = new PasskeyServer({
+        rpcUrl: import.meta.env.VITE_rpcUrl,
+        launchtubeUrl: import.meta.env.VITE_launchtubeUrl,
+        launchtubeJwt: import.meta.env.VITE_launchtubeJwt,
+        mercuryProjectName: import.meta.env.VITE_mercuryProjectName,
+        mercuryUrl: import.meta.env.VITE_mercuryUrl,
+        mercuryJwt: import.meta.env.VITE_mercuryJwt,
+    });
+    
+    sac = new SACClient({
+        rpcUrl: import.meta.env.VITE_rpcUrl,
+        networkPassphrase: import.meta.env.VITE_networkPassphrase,
+    });
+    
+    native = sac.getSACClient(import.meta.env.VITE_nativeContractId);
+    
+    return {
+        fundPubkey,
+        fundSigner,
+        account,
+        server,
+        sac,
+        native
+    };
+}
