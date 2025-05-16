@@ -372,6 +372,27 @@
       return;
     }
 
+    // Validate recipient address format for Stellar
+    if (!recipientAddress.startsWith("G") || recipientAddress.length !== 56) {
+      sendResult = {
+        success: false,
+        message: "Invalid Stellar address format. Please check and try again.",
+      };
+      return;
+    }
+
+    // Validate amount doesn't exceed available balance
+    const currentBalance = walletBalance
+      ? Number(walletBalance) / 10_000_000
+      : 0;
+    if (Number(sendAmount) > currentBalance) {
+      sendResult = {
+        success: false,
+        message: `Insufficient balance. You have ${currentBalance.toFixed(7)} XLM available.`,
+      };
+      return;
+    }
+
     sendingInProgress = true;
     sendResult = null;
 
@@ -431,9 +452,27 @@
       }
     } catch (error: any) {
       console.error("Send transaction error:", error);
+
+      // Provide user-friendly error messages
+      let errorMessage = "Transaction failed. Please try again.";
+
+      if (error.message) {
+        if (error.message.includes("insufficient")) {
+          errorMessage = "Insufficient balance to complete this transaction.";
+        } else if (error.message.includes("not found")) {
+          errorMessage =
+            "Recipient address not found. Please verify and try again.";
+        } else if (error.message.includes("timeout")) {
+          errorMessage =
+            "Network timeout. Please check your connection and try again.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
       sendResult = {
         success: false,
-        message: error.message || "Transaction failed. Please try again.",
+        message: errorMessage,
       };
     } finally {
       sendingInProgress = false;
@@ -1046,9 +1085,24 @@
               </div>
             </div>
             <button
-              class="send-btn primary"
+              class="send-btn primary pulse-animation"
               on:click={() => (showSendModal = true)}
             >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="send-icon"
+                ><path d="M22 2L11 13"></path><path
+                  d="M22 2L15 22L11 13L2 9L22 2Z"
+                ></path></svg
+              >
               Send Tokens
             </button>
           </div>
@@ -1344,53 +1398,84 @@
       <form on:submit|preventDefault={handleSendTokenSubmit} class="send-form">
         <div class="form-group">
           <label for="token-select">Select Token</label>
-          <select
-            id="token-select"
-            bind:value={selectedSendToken}
-            class="token-select"
-          >
-            {#each tokenOptions as token}
-              <option value={token.id}>{token.name}</option>
-            {/each}
-          </select>
+          <div class="styled-select-wrapper">
+            <select
+              id="token-select"
+              bind:value={selectedSendToken}
+              class="token-select styled-select"
+            >
+              {#each tokenOptions as token}
+                <option value={token.id}>{token.name}</option>
+              {/each}
+            </select>
+            <div class="select-arrow">▼</div>
+          </div>
         </div>
 
         <div class="form-group">
           <label for="recipient-address">Recipient Address</label>
-          <input
-            type="text"
-            id="recipient-address"
-            bind:value={recipientAddress}
-            placeholder="Enter wallet address"
-            class="form-input"
-            required
-          />
+          <div class="input-wrapper">
+            <input
+              type="text"
+              id="recipient-address"
+              bind:value={recipientAddress}
+              placeholder="Enter wallet address"
+              class="form-input"
+              required
+            />
+            <div class="input-info">Start with G and 56 characters long</div>
+          </div>
         </div>
 
         <div class="form-group">
           <label for="send-amount">Amount</label>
-          <input
-            type="number"
-            id="send-amount"
-            bind:value={sendAmount}
-            placeholder="0.0"
-            min="0"
-            step="any"
-            class="form-input"
-            required
-          />
+          <div class="input-wrapper">
+            <input
+              type="number"
+              id="send-amount"
+              bind:value={sendAmount}
+              placeholder="0.0"
+              min="0"
+              step="any"
+              class="form-input"
+              required
+            />
+            <div class="input-info">
+              Available: {walletBalance
+                ? parseFloat((Number(walletBalance) / 10_000_000).toFixed(7))
+                : "0"} XLM
+            </div>
+          </div>
         </div>
 
         <button
           type="submit"
           class="send-submit-btn"
-          disabled={sendingInProgress || !isValid}
+          disabled={sendingInProgress ||
+            !recipientAddress ||
+            !sendAmount ||
+            Number(sendAmount) <= 0}
         >
           {#if sendingInProgress}
             <div class="btn-spinner"></div>
             Processing...
           {:else}
-            Send
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="send-icon"
+              ><path d="M22 2L11 13"></path><path
+                d="M22 2L15 22L11 13L2 9L22 2Z"
+              ></path></svg
+            >
+            Send Tokens
           {/if}
         </button>
 
@@ -2938,7 +3023,7 @@
     font-family: "Outfit", sans-serif;
     font-size: 1.1rem;
     font-weight: 700;
-    padding: 0.9rem 0;
+    padding: 0.9rem 1.2rem;
     border: none;
     border-radius: 1rem;
     cursor: pointer;
@@ -2946,11 +3031,56 @@
       background 0.2s,
       box-shadow 0.2s,
       transform 0.13s;
-    box-shadow: 0 2px 16px 0 rgba(162, 89, 255, 0.2);
+    box-shadow: 0 2px 16px 0 rgba(162, 89, 255, 0.5);
     margin-top: 1rem;
     width: 100%;
     max-width: 15rem;
     align-self: flex-end;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: linear-gradient(90deg, #a259ff 0%, #38b6ff 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .send-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px 0 rgba(162, 89, 255, 0.7);
+    background: linear-gradient(90deg, #38b6ff 0%, #a259ff 100%);
+  }
+
+  .send-icon {
+    margin-right: 0.3rem;
+  }
+
+  .pulse-animation {
+    position: relative;
+  }
+
+  .pulse-animation::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 1rem;
+    box-shadow: 0 0 0 0 rgba(162, 89, 255, 0.7);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(162, 89, 255, 0.7);
+    }
+    70% {
+      box-shadow: 0 0 0 10px rgba(162, 89, 255, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(162, 89, 255, 0);
+    }
   }
 
   .section-heading {
@@ -3232,9 +3362,9 @@
 
   /* Send Modal Styles */
   .send-modal {
-    background: #18122b;
+    background: rgba(24, 18, 43, 0.95);
     border-radius: 1.5rem;
-    box-shadow: 0 8px 48px 0 #0008;
+    box-shadow: 0 8px 48px 0 rgba(0, 0, 0, 0.6);
     padding: 2rem;
     min-width: 340px;
     max-width: 95vw;
@@ -3243,6 +3373,8 @@
     display: flex;
     flex-direction: column;
     animation: popIn 0.2s;
+    border: 1px solid rgba(162, 89, 255, 0.3);
+    backdrop-filter: blur(10px);
   }
 
   .send-modal-header {
@@ -3299,12 +3431,43 @@
     padding: 1rem;
     border-radius: 0.75rem;
     outline: none;
-    transition: border-color 0.2s;
+    transition: all 0.2s;
+    width: 100%;
   }
 
   .form-input:focus,
   .token-select:focus {
     border-color: #a259ff;
+    box-shadow: 0 0 0 2px rgba(162, 89, 255, 0.25);
+  }
+
+  .styled-select-wrapper {
+    position: relative;
+    width: 100%;
+  }
+
+  .styled-select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background: rgba(15, 10, 30, 0.8);
+    border: 1px solid rgba(162, 89, 255, 0.4);
+    background-image: linear-gradient(
+      90deg,
+      rgba(162, 89, 255, 0.1) 0%,
+      rgba(56, 182, 255, 0.1) 100%
+    );
+    cursor: pointer;
+  }
+
+  .select-arrow {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(162, 89, 255, 0.7);
+    pointer-events: none;
+    font-size: 0.8rem;
   }
 
   .send-submit-btn {
@@ -3319,22 +3482,73 @@
     cursor: pointer;
     transition:
       background 0.2s,
-      box-shadow 0.2s;
-    margin-top: 1rem;
+      box-shadow 0.2s,
+      transform 0.2s;
+    margin-top: 1.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
+    height: 3.5rem;
+    box-shadow: 0 2px 10px 0 rgba(162, 89, 255, 0.3);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .send-submit-btn::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.2),
+      transparent
+    );
+    transition: 0.5s;
   }
 
   .send-submit-btn:hover:not(:disabled) {
     background: linear-gradient(90deg, #38b6ff 0%, #a259ff 100%);
-    box-shadow: 0 4px 20px 0 rgba(162, 89, 255, 0.4);
+    box-shadow: 0 4px 20px 0 rgba(162, 89, 255, 0.6);
+    transform: translateY(-2px);
+  }
+
+  .send-submit-btn:hover:not(:disabled)::before {
+    left: 100%;
   }
 
   .send-submit-btn:disabled {
-    opacity: 0.7;
+    opacity: 0.5;
     cursor: not-allowed;
+    background: rgba(162, 89, 255, 0.3);
+  }
+
+  .input-wrapper {
+    position: relative;
+    width: 100%;
+  }
+
+  .input-info {
+    position: absolute;
+    right: 10px;
+    top: 0;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.6);
+    background: rgba(15, 10, 30, 0.7);
+    padding: 0 5px;
+    border-radius: 0 0 5px 5px;
+    transform: translateY(-100%);
+    transition: all 0.2s;
+    pointer-events: none;
+  }
+
+  .form-input:focus + .input-info {
+    transform: translateY(0);
+    color: rgba(162, 89, 255, 0.9);
   }
 
   .btn-spinner {
@@ -3352,16 +3566,37 @@
     font-size: 1rem;
     text-align: center;
     animation: fadeIn 0.2s;
+    margin-top: 1rem;
+    border: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .send-result.success {
-    background: rgba(62, 232, 107, 0.2);
+    background: rgba(62, 232, 107, 0.1);
     color: #3ee86b;
+    border-color: rgba(62, 232, 107, 0.3);
+    box-shadow: 0 0 15px rgba(62, 232, 107, 0.2);
+  }
+
+  .send-result.success::before {
+    content: "✓";
+    margin-right: 0.5rem;
+    font-weight: bold;
   }
 
   .send-result.error {
-    background: rgba(255, 71, 71, 0.2);
+    background: rgba(255, 71, 71, 0.1);
     color: #ff4747;
+    border-color: rgba(255, 71, 71, 0.3);
+    box-shadow: 0 0 15px rgba(255, 71, 71, 0.2);
+  }
+
+  .send-result.error::before {
+    content: "⚠";
+    margin-right: 0.5rem;
+    font-weight: bold;
   }
 
   @media (max-width: 768px) {
