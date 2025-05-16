@@ -60,7 +60,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 0 1.2rem;
-    height: 70px;
+    height: 54px;
     background: linear-gradient(90deg, #1a1333 0%, #231942 100%);
     box-shadow: 0 2px 16px 0 rgba(30, 0, 60, 0.12);
     position: relative;
@@ -179,7 +179,7 @@
   @media (max-width: 900px) {
     .navbar {
       padding: 0 0.5rem;
-      height: auto;
+      height: 48px;
       margin: 0 auto 1rem auto;
     }
     nav {
@@ -198,7 +198,7 @@
   @media (max-width: 600px) {
     .navbar {
       flex-direction: column;
-      height: auto;
+      height: 48px;
       align-items: flex-start;
       gap: 0.5rem;
     }
@@ -217,7 +217,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: calc(100vh - 90px - 1.5rem); /* 90px navbar + margin */
+    min-height: calc(100vh - 54px - 1.5rem); /* 54px navbar + margin */
     width: 100%;
     text-align: center;
     background: radial-gradient(
@@ -308,7 +308,7 @@
     }
     .hero {
       padding: 1.2rem 0.2rem 2rem 0.2rem;
-      min-height: calc(100vh - 70px - 1rem);
+      min-height: calc(100vh - 48px - 1rem);
     }
     .hero-actions {
       gap: 0.7rem;
