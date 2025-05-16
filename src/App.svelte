@@ -18,7 +18,6 @@
     {/each}
   </nav>
   <div class="right-group">
-    <div class="wallet-icon">🌞</div>
     <button class="login-btn">Sign Up/Login</button>
   </div>
 </div>
@@ -134,18 +133,6 @@
     gap: 1.2rem;
     min-width: 0;
     flex-shrink: 0;
-  }
-  .wallet-icon {
-    width: 36px;
-    height: 36px;
-    background: rgba(255, 255, 255, 0.04);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    box-shadow: 0 2px 8px 0 #0002;
-    margin-left: 2.2rem;
   }
   .login-btn {
     font-family: "Outfit", sans-serif;
