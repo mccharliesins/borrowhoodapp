@@ -51,6 +51,7 @@
     z-index: 10;
     overflow: hidden;
     min-width: 0;
+    margin: 1.5rem auto 2.5rem auto;
   }
   .logo {
     font-size: 2rem;
@@ -161,6 +162,7 @@
     .navbar {
       padding: 0 0.5rem;
       height: auto;
+      margin: 1rem auto 1.5rem auto;
     }
     nav {
       gap: 0.7rem;
