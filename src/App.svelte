@@ -17,6 +17,10 @@
       value: "$480.50",
       apy: "5.2%",
       days: "0 days left",
+      duration: "45 days",
+      start: "Aug 15, 2023",
+      interest: "+$32.84",
+      withdrawable: "1,200 XLM",
     },
     {
       icon: "💲",
@@ -25,8 +29,16 @@
       value: "$750.00",
       apy: "8.1%",
       days: "0 days left",
+      duration: "30 days",
+      start: "Sep 1, 2023",
+      interest: "+$18.50",
+      withdrawable: "750 USDC",
     },
   ];
+
+  // Modal state
+  let showLoanModal = false;
+  let modalAsset = null;
 
   function openAuthModal() {
     showAuthModal = true;
@@ -38,6 +50,16 @@
   }
   function handleKeydown(event: KeyboardEvent) {
     if (event.key === "Escape") closeAuthModal();
+  }
+  function openLoanModal(asset) {
+    modalAsset = asset;
+    showLoanModal = true;
+    document.body.style.overflow = "hidden";
+  }
+  function closeLoanModal() {
+    showLoanModal = false;
+    modalAsset = null;
+    document.body.style.overflow = "";
   }
 </script>
 
@@ -217,6 +239,7 @@
                 <th>Value (USD)</th>
                 <th>APY</th>
                 <th>Days Left</th>
+                <th>Details</th>
               </tr>
             </thead>
             <tbody>
@@ -230,6 +253,12 @@
                   <td>{asset.value}</td>
                   <td class="apy positive">{asset.apy}</td>
                   <td>{asset.days}</td>
+                  <td
+                    ><button
+                      class="details-btn"
+                      on:click={() => openLoanModal(asset)}>Details</button
+                    ></td
+                  >
                 </tr>
               {/each}
             </tbody>
@@ -263,6 +292,61 @@
       <div class="auth-actions">
         <button class="auth-btn primary">Login with Passkey</button>
         <button class="auth-btn secondary">Create a New Account</button>
+      </div>
+    </div>
+  </div>
+{/if}
+
+{#if showLoanModal && modalAsset}
+  <div class="modal-overlay" on:click={closeLoanModal} tabindex="-1">
+    <div class="loan-modal" on:click|stopPropagation>
+      <div class="loan-modal-header">
+        <span class="loan-modal-title">Withdraw {modalAsset.name}</span>
+        <button class="loan-modal-close" on:click={closeLoanModal}
+          >&times;</button
+        >
+      </div>
+      <div class="loan-modal-asset">
+        <span class="loan-modal-asset-icon">{modalAsset.icon}</span>
+        <div class="loan-modal-asset-info">
+          <div class="loan-modal-asset-name">{modalAsset.name}</div>
+          <div class="loan-modal-asset-type">Lending Position</div>
+        </div>
+      </div>
+      <div class="loan-modal-divider"></div>
+      <div class="loan-modal-row">
+        <span>Amount Deposited:</span><span class="loan-modal-value"
+          >{modalAsset.amount} {modalAsset.name}</span
+        >
+      </div>
+      <div class="loan-modal-row">
+        <span>Value:</span><span class="loan-modal-value"
+          >{modalAsset.value}</span
+        >
+      </div>
+      <div class="loan-modal-row">
+        <span>Duration:</span><span class="loan-modal-value"
+          >{modalAsset.duration}</span
+        >
+      </div>
+      <div class="loan-modal-row">
+        <span>Start Date:</span><span class="loan-modal-value loan-modal-bold"
+          >{modalAsset.start}</span
+        >
+      </div>
+      <div class="loan-modal-row">
+        <span>APY:</span><span class="loan-modal-value">{modalAsset.apy}</span>
+      </div>
+      <div class="loan-modal-row">
+        <span>Interest Earned:</span><span
+          class="loan-modal-value loan-modal-green">{modalAsset.interest}</span
+        >
+      </div>
+      <div class="loan-modal-divider"></div>
+      <div class="loan-modal-row loan-modal-total">
+        <span>Total Withdrawable:</span><span class="loan-modal-value"
+          >{modalAsset.withdrawable}</span
+        >
       </div>
     </div>
   </div>
@@ -911,6 +995,139 @@
     .portfolio-table.minimalist td {
       padding: 0.7rem 0.5rem;
       font-size: 1rem;
+    }
+  }
+  .details-btn {
+    background: linear-gradient(90deg, #a259ff 0%, #38b6ff 100%);
+    color: #fff;
+    font-weight: 700;
+    border: none;
+    border-radius: 0.8rem;
+    padding: 0.5rem 1.5rem;
+    cursor: pointer;
+    font-size: 1.08rem;
+    transition:
+      background 0.18s,
+      box-shadow 0.18s;
+    box-shadow: 0 2px 12px 0 #a259ff33;
+  }
+  .details-btn:hover {
+    background: linear-gradient(90deg, #38b6ff 0%, #a259ff 100%);
+    box-shadow: 0 4px 20px 0 #a259ff55;
+  }
+  .loan-modal {
+    background: #232032;
+    border-radius: 1.2rem;
+    box-shadow: 0 8px 48px 0 #0008;
+    padding: 2.2rem 2.2rem 1.5rem 2.2rem;
+    min-width: 340px;
+    max-width: 95vw;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    animation: popIn 0.2s;
+    position: relative;
+  }
+  .loan-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+  .loan-modal-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #fff;
+  }
+  .loan-modal-close {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 2rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-left: 1rem;
+    transition: color 0.18s;
+  }
+  .loan-modal-close:hover {
+    color: #a259ff;
+  }
+  .loan-modal-asset {
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+    margin-bottom: 1.2rem;
+  }
+  .loan-modal-asset-icon {
+    font-size: 2.5rem;
+    background: #18122b;
+    border-radius: 50%;
+    width: 3.5rem;
+    height: 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .loan-modal-asset-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+  .loan-modal-asset-name {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #fff;
+  }
+  .loan-modal-asset-type {
+    font-size: 1rem;
+    color: #bdb8d7;
+    opacity: 0.85;
+  }
+  .loan-modal-divider {
+    border-bottom: 1.5px solid #28243a;
+    margin: 1.1rem 0 1.1rem 0;
+    width: 100%;
+  }
+  .loan-modal-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 1.08rem;
+    margin-bottom: 0.7rem;
+    color: #bdb8d7;
+  }
+  .loan-modal-row:last-child {
+    margin-bottom: 0;
+  }
+  .loan-modal-value {
+    font-weight: 700;
+    color: #fff;
+    font-size: 1.08rem;
+  }
+  .loan-modal-bold {
+    font-weight: 800;
+    color: #fff;
+    font-size: 1.1rem;
+  }
+  .loan-modal-green {
+    color: #3ee86b;
+  }
+  .loan-modal-total {
+    font-size: 1.13rem;
+    font-weight: 800;
+    margin-top: 0.7rem;
+  }
+  @media (max-width: 500px) {
+    .loan-modal {
+      padding: 1.2rem 0.5rem 1.2rem 0.5rem;
+      min-width: 0;
+    }
+    .loan-modal-title {
+      font-size: 1.1rem;
+    }
+    .loan-modal-row,
+    .loan-modal-value {
+      font-size: 0.98rem;
     }
   }
 </style>
