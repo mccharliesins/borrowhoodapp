@@ -470,6 +470,36 @@
   $: total = principal + interest;
   $: interestUsd = (interest * price).toFixed(2);
   $: totalUsd = (total * price).toFixed(2);
+
+  // Add token meta for display
+  type TokenKey = "XLM" | "USDC";
+  const tokenMeta: Record<
+    TokenKey,
+    {
+      icon: string;
+      name: string;
+      apy: number;
+      price: () => string;
+    }
+  > = {
+    XLM: {
+      icon: "🌟",
+      name: "Stellar Lumens",
+      apy: rates.XLM.lend,
+      price: () => (isLoadingPrice ? "..." : price.toFixed(2)),
+    },
+    USDC: {
+      icon: "💲",
+      name: "USD Coin",
+      apy: rates.USDC.lend,
+      price: () => (isLoadingPrice ? "..." : "1.00"),
+    },
+  };
+  let showTokenDropdown = false;
+  function selectToken(t: TokenKey) {
+    selectedToken = t;
+    showTokenDropdown = false;
+  }
 </script>
 
 <div class="background-container">
@@ -513,8 +543,14 @@
         cryptocurrency with no banks required.
       </p>
       <div class="hero-actions">
-        <button class="hero-btn primary">Start Borrowing</button>
-        <button class="hero-btn secondary">Lend & Earn</button>
+        <button
+          class="hero-btn primary"
+          on:click={() => (activeTab = "Lend/Borrow")}>Start Borrowing</button
+        >
+        <button
+          class="hero-btn secondary"
+          on:click={() => (activeTab = "LEND/Borrow")}>Lend & Earn</button
+        >
       </div>
     </section>
 
@@ -628,13 +664,11 @@
       <div class="cta-actions">
         <button
           class="cta-btn primary"
-          on:click={() => (window.location.href = "/lendborrow")}
-          >Start Lending</button
+          on:click={() => (activeTab = "Lend/Borrow")}>Start Lending</button
         >
         <button
           class="cta-btn secondary"
-          on:click={() => (window.location.href = "/dashboard")}
-          >View Dashboard</button
+          on:click={() => (activeTab = "Dashboard")}>View Dashboard</button
         >
       </div>
     </section>
@@ -717,32 +751,79 @@
             <span class="form-help">?</span>
           </div>
           <div class="form-row">
-            <div class="token-select">
-              <select bind:value={selectedToken} class="token-dropdown">
-                <option value="XLM">XLM</option>
-                <option value="USDC">USDC</option>
-              </select>
-              <div class="token-info">
-                <span class="token-apy">{rates[selectedToken].lend}% APY</span>
-                <span class="token-price"
-                  >{isLoadingPrice ? "..." : price.toFixed(2)} USD</span
-                >
+            <div
+              class="token-select custom-token-select"
+              tabindex="0"
+              on:click={() => (showTokenDropdown = !showTokenDropdown)}
+              on:blur={() => (showTokenDropdown = false)}
+            >
+              <div class="token-option-selected token-option-2col">
+                <div class="token-row">
+                  <span class="token-icon">{tokenMeta[selectedToken].icon}</span
+                  >
+                  <span class="token-ticker">{selectedToken}</span>
+                  <span class="token-name">{tokenMeta[selectedToken].name}</span
+                  >
+                  <span class="token-apy"
+                    >{tokenMeta[selectedToken].apy}% APY</span
+                  >
+                  <span class="token-caret">▼</span>
+                </div>
               </div>
+              {#if showTokenDropdown}
+                <div class="token-dropdown-list">
+                  {#each Object.keys(tokenMeta) as t}
+                    <div
+                      class="token-option token-option-2col {selectedToken === t
+                        ? 'active'
+                        : ''}"
+                      on:click={() => selectToken(t as TokenKey)}
+                    >
+                      <div class="token-row">
+                        <span class="token-icon"
+                          >{tokenMeta[t as TokenKey].icon}</span
+                        >
+                        <span class="token-ticker">{t}</span>
+                        <span class="token-name"
+                          >{tokenMeta[t as TokenKey].name}</span
+                        >
+                        <span class="token-apy"
+                          >{tokenMeta[t as TokenKey].apy}% Annual Interest</span
+                        >
+                        <span class="token-price"
+                          >{tokenMeta[t as TokenKey].price()} USD</span
+                        >
+                        <span class="token-caret">▼</span>
+                      </div>
+                    </div>
+                  {/each}
+                </div>
+              {/if}
             </div>
           </div>
           <div class="form-row">
             <div class="form-label-row">
-              <span class="form-title"
-                >Amount{amountUsd && ` (${amountUsd} USD)`}</span
-              >
-              {#if showBalance}
-                <span class="form-balance"
-                  >Balance: {walletBalance}
+              <span class="form-title">
+                Amount{amountUsd && ` (${amountUsd} USD)`}
+              </span>
+              {#if showBalance && lendBorrowMode === "LEND"}
+                <span class="form-balance">
+                  Balance: {tokenBalances.find((t) => t.name === selectedToken)
+                    ?.balance || "0"}
                   {selectedToken}
-                  <span class="form-balance-usd"
-                    >({(Number(walletBalance) * price).toFixed(2)} USD)</span
-                  ></span
-                >
+                  <span class="form-balance-usd">
+                    ({(
+                      Number(
+                        tokenBalances.find((t) => t.name === selectedToken)
+                          ?.balance || 0
+                      ) * price
+                    ).toFixed(2)} USD)
+                  </span>
+                </span>
+              {:else if lendBorrowMode === "BORROW"}
+                <span class="form-balance form-balance-right">
+                  Max Borrow Capacity: 5338.98 XLM<br />(1575.00 USD)
+                </span>
               {/if}
             </div>
             <div class="amount-input-row">
@@ -2004,14 +2085,21 @@
     }
   }
   .portfolio-card {
-    background: rgba(20, 15, 40, 0.93);
-    border-radius: 1.3rem;
-    box-shadow: 0 8px 48px 0 #0008;
+    background: rgba(35, 32, 50, 0.55);
+    border-radius: 1.5rem;
+    box-shadow:
+      0 8px 48px 0 #0008,
+      0 1.5px 8px 0 #a259ff22;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1.5px solid rgba(255, 255, 255, 0.08);
     padding: 2.5rem 2.2rem 2.2rem 2.2rem;
     max-width: 1100px;
-    margin: 0 auto;
+    margin: 0 auto 2.5rem auto;
     color: #fff;
-    margin-bottom: 2.5rem;
+    transition:
+      box-shadow 0.18s,
+      background 0.18s;
   }
   .portfolio-title {
     font-size: 2rem;
@@ -3257,17 +3345,25 @@
     height: 1.7rem;
   }
   .lend-form-card .token-select {
-    padding: 0.7rem 0.9rem 0.4rem 0.9rem;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.7rem 0rem 0.4rem 0rem;
     border-radius: 0.6rem;
     min-height: unset;
+    margin-bottom: 0.5rem;
   }
   .lend-form-card .token-dropdown {
+    width: 100%;
     font-size: 1.05rem;
     margin-bottom: 0.05rem;
+    box-sizing: border-box;
   }
   .lend-form-card .token-info {
+    width: 100%;
     font-size: 0.95rem;
     gap: 0.7rem;
+    display: flex;
+    justify-content: space-between;
   }
   .lend-form-card .token-apy,
   .lend-form-card .token-price {
@@ -3448,5 +3544,190 @@
   }
   .custom-months-input-below:focus {
     border: 2px solid #a259ff;
+  }
+  .token-info-row {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.7rem;
+    padding: 0.1rem 0.2rem;
+  }
+  .token-ticker {
+    font-weight: 800;
+    font-size: 1.08rem;
+    color: #fff;
+    flex: 1 1 0;
+    text-align: left;
+    letter-spacing: 0.5px;
+  }
+  .token-apy {
+    color: #3ee86b;
+    font-size: 1.02rem;
+    font-weight: 700;
+    flex: 1 1 0;
+    text-align: center;
+  }
+  .token-price {
+    color: #38b6ff;
+    font-size: 1.02rem;
+    font-weight: 700;
+    flex: 1 1 0;
+    text-align: right;
+  }
+  /* Custom token dropdown styles */
+  .custom-token-select {
+    position: relative;
+    width: 100%;
+    background: rgba(20, 15, 40, 0.93);
+    border-radius: 0.8rem;
+    border: 1.5px solid #28243a;
+    box-shadow: 0 2px 12px 0 #a259ff11;
+    cursor: pointer;
+    margin-bottom: 0.5rem;
+    min-height: 3.2rem;
+    transition:
+      border 0.18s,
+      box-shadow 0.18s;
+    outline: none;
+  }
+  .token-option-selected,
+  .token-option {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.9rem 1.1rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #fff;
+    border-radius: 0.7rem;
+    background: none;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .token-option-selected {
+    justify-content: space-between;
+    position: relative;
+  }
+  .token-option {
+    background: rgba(35, 32, 50, 0.55);
+    margin-bottom: 0.3rem;
+    transition:
+      background 0.13s,
+      box-shadow 0.13s;
+    cursor: pointer;
+  }
+  .token-option.active,
+  .token-option:hover {
+    background: linear-gradient(90deg, #a259ff22 0%, #38b6ff22 100%);
+    box-shadow: 0 2px 12px 0 #a259ff33;
+  }
+  .token-dropdown-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    z-index: 10;
+    background: rgba(20, 15, 40, 0.98);
+    border-radius: 0.8rem;
+    box-shadow: 0 8px 32px 0 #0008;
+    margin-top: 0.2rem;
+    padding: 0.1rem 0.05rem;
+    max-height: 180px;
+    overflow-y: auto;
+  }
+  .token-option,
+  .token-option-2col {
+    min-height: 36px;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.98rem;
+    gap: 0.4rem;
+  }
+  .token-row {
+    gap: 0.4rem;
+  }
+  .token-icon {
+    font-size: 1.1rem;
+    margin-right: 0.15rem;
+  }
+  .token-ticker {
+    font-size: 1.01rem;
+  }
+  .token-name {
+    font-size: 0.98rem;
+  }
+  .token-apy {
+    font-size: 0.98rem;
+  }
+  .token-caret {
+    margin-left: auto;
+    color: #bdb8d7;
+    font-size: 1.1rem;
+    font-weight: 700;
+    transition: transform 0.18s;
+  }
+  .custom-token-select:focus-within,
+  .custom-token-select:focus {
+    border: 1.5px solid #a259ff;
+    box-shadow: 0 2px 12px 0 #a259ff33;
+  }
+  .token-option-2col {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+    padding: 0.7rem 1.1rem;
+  }
+  .token-row {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.7rem;
+  }
+  .token-row .token-ticker {
+    font-weight: 800;
+    font-size: 1.08rem;
+    color: #fff;
+    letter-spacing: 0.5px;
+    margin-right: 0.5rem;
+  }
+  .token-row .token-name {
+    color: #bdb8d7;
+    font-size: 1.01rem;
+    font-weight: 600;
+  }
+  .token-row .token-apy {
+    color: #3ee86b;
+    font-size: 1.01rem;
+    font-weight: 700;
+  }
+  .token-row .token-price {
+    color: #38b6ff;
+    font-size: 1.01rem;
+    font-weight: 700;
+  }
+  .token-option-2col .token-caret {
+    align-self: flex-end;
+    margin-top: 0.2rem;
+  }
+  .token-row .token-caret {
+    margin-left: 0.7rem;
+    color: #bdb8d7;
+    font-size: 1.1rem;
+    font-weight: 700;
+    align-self: center;
+    vertical-align: middle;
+    transition: transform 0.18s;
+  }
+  .form-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.2rem;
+  }
+  .form-balance-right {
+    text-align: right;
+    display: block;
+    width: 100%;
   }
 </style>
