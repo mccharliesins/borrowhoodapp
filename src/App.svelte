@@ -40,6 +40,7 @@
     max-width: 100vw;
     box-sizing: border-box;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     padding: 0 1.2rem;
@@ -48,7 +49,8 @@
     box-shadow: 0 2px 16px 0 rgba(30, 0, 60, 0.12);
     position: relative;
     z-index: 10;
-    overflow-x: auto;
+    overflow: hidden;
+    min-width: 0;
   }
   .logo {
     font-size: 2rem;
@@ -61,15 +63,16 @@
     margin-right: 1rem;
     font-family: "New Rocker", cursive;
     white-space: nowrap;
+    min-width: 0;
   }
   nav {
     display: flex;
     gap: 1.2rem;
     align-items: center;
-    flex: 1;
+    flex-shrink: 1;
     justify-content: flex-start;
     min-width: 0;
-    overflow-x: auto;
+    overflow: hidden;
   }
   .nav-tab {
     position: relative;
@@ -81,6 +84,7 @@
     transition: color 0.2s;
     font-family: "Outfit", sans-serif;
     white-space: nowrap;
+    min-width: 0;
   }
   .nav-tab:hover,
   .nav-tab.active {
@@ -111,6 +115,7 @@
     align-items: center;
     gap: 1.2rem;
     min-width: 0;
+    flex-shrink: 0;
   }
   .wallet-icon {
     width: 36px;
@@ -140,6 +145,7 @@
       background 0.2s;
     outline: none;
     white-space: nowrap;
+    min-width: 0;
   }
   .login-btn:hover {
     transform: translateY(-2px) scale(1.04);
@@ -154,6 +160,7 @@
   @media (max-width: 900px) {
     .navbar {
       padding: 0 0.5rem;
+      height: auto;
     }
     nav {
       gap: 0.7rem;
