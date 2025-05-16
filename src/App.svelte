@@ -77,7 +77,7 @@
       0 0 8px #6f7cff,
       0 0 16px #6f7cff44;
     user-select: none;
-    margin-right: 1rem;
+    margin-right: 2.5rem;
     font-family: "New Rocker", cursive;
     white-space: nowrap;
     min-width: 0;
@@ -90,6 +90,7 @@
     justify-content: flex-start;
     min-width: 0;
     overflow: hidden;
+    margin-left: 0.5rem;
   }
   .nav-tab {
     position: relative;
@@ -144,6 +145,7 @@
     justify-content: center;
     font-size: 1.5rem;
     box-shadow: 0 2px 8px 0 #0002;
+    margin-left: 2.2rem;
   }
   .login-btn {
     font-family: "Outfit", sans-serif;
@@ -182,10 +184,11 @@
     }
     nav {
       gap: 0.7rem;
+      margin-left: 0.2rem;
     }
     .logo {
       font-size: 1.3rem;
-      margin-right: 0.5rem;
+      margin-right: 1.2rem;
     }
     .login-btn {
       font-size: 1rem;
@@ -213,17 +216,15 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 60vh;
+    min-height: calc(100vh - 6rem);
+    width: 100vw;
     text-align: center;
     background: radial-gradient(
       ellipse at 60% 40%,
       rgba(130, 71, 229, 0.18) 0%,
       rgba(30, 0, 60, 0) 70%
     );
-    border-radius: 2rem;
-    margin: 0 auto;
-    max-width: 900px;
-    box-shadow: 0 8px 64px 0 #0002;
+    margin: 0;
     padding: 2rem 1rem 3rem 1rem;
   }
   .hero-title {
@@ -305,6 +306,7 @@
     }
     .hero {
       padding: 1.2rem 0.2rem 2rem 0.2rem;
+      min-height: calc(100vh - 4rem);
     }
     .hero-actions {
       gap: 0.7rem;
