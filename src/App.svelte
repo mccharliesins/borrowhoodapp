@@ -2,6 +2,20 @@
   // No additional logic needed for static navbar
   let activeTab = "Home";
   const tabs = ["Home", "Dashboard", "Lend/Borrow", "Wallet"];
+
+  let showAuthModal = false;
+
+  function openAuthModal() {
+    showAuthModal = true;
+    document.body.style.overflow = "hidden";
+  }
+  function closeAuthModal() {
+    showAuthModal = false;
+    document.body.style.overflow = "";
+  }
+  function handleKeydown(event: KeyboardEvent) {
+    if (event.key === "Escape") closeAuthModal();
+  }
 </script>
 
 <div class="navbar">
@@ -18,7 +32,7 @@
     {/each}
   </nav>
   <div class="right-group">
-    <button class="login-btn">Sign Up/Login</button>
+    <button class="login-btn" on:click={openAuthModal}>Sign Up/Login</button>
   </div>
 </div>
 
@@ -41,6 +55,28 @@
   {/if}
   <!-- Main content placeholder for other tabs -->
 </main>
+
+{#if showAuthModal}
+  <div
+    class="modal-overlay"
+    on:click={closeAuthModal}
+    tabindex="-1"
+    on:keydown={handleKeydown}
+  >
+    <div class="auth-modal" on:click|stopPropagation>
+      <h2 class="auth-title">Login/Sign Up</h2>
+      <p class="auth-desc">
+        Use your Passkey for secure, passwordless access. Passkeys are safer,
+        faster, and protect you from phishing. Enjoy seamless login and account
+        creation with modern security.
+      </p>
+      <div class="auth-actions">
+        <button class="auth-btn primary">Login with Passkey</button>
+        <button class="auth-btn secondary">Create a New Account</button>
+      </div>
+    </div>
+  </div>
+{/if}
 
 <style>
   @import url("https://fonts.googleapis.com/css2?family=Jaro:opsz@6..72&family=New+Rocker&family=Outfit:wght@100..900&display=swap");
@@ -301,6 +337,119 @@
     }
     .hero-btn {
       padding: 0.7rem 1.3rem;
+      font-size: 1rem;
+    }
+  }
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(20, 10, 40, 0.65);
+    backdrop-filter: blur(7px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s;
+  }
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  .auth-modal {
+    background: #18122b;
+    border-radius: 1.5rem;
+    box-shadow: 0 8px 48px 0 #0008;
+    padding: 2.5rem 2.2rem 2.2rem 2.2rem;
+    min-width: 340px;
+    max-width: 95vw;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: popIn 0.2s;
+  }
+  @keyframes popIn {
+    from {
+      transform: scale(0.95);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+  .auth-title {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 1.1rem;
+    letter-spacing: -1px;
+    color: #c471f5;
+    text-align: center;
+  }
+  .auth-desc {
+    font-size: 1.1rem;
+    color: #d1cbe7;
+    margin-bottom: 2.1rem;
+    text-align: center;
+    max-width: 350px;
+  }
+  .auth-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    width: 100%;
+  }
+  .auth-btn {
+    font-family: "Outfit", sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    padding: 1rem 0;
+    border: none;
+    border-radius: 1.5rem;
+    cursor: pointer;
+    transition:
+      background 0.18s,
+      box-shadow 0.18s,
+      color 0.18s;
+    width: 100%;
+    margin-bottom: 0.2rem;
+  }
+  .auth-btn.primary {
+    background: linear-gradient(90deg, #a259ff 0%, #38b6ff 100%);
+    color: #fff;
+    box-shadow: 0 2px 12px 0 #a259ff33;
+  }
+  .auth-btn.primary:hover {
+    background: linear-gradient(90deg, #38b6ff 0%, #a259ff 100%);
+    color: #fff;
+    box-shadow: 0 4px 20px 0 #a259ff55;
+  }
+  .auth-btn.secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    border: 1.5px solid #a259ff;
+  }
+  .auth-btn.secondary:hover {
+    background: rgba(162, 89, 255, 0.18);
+    color: #fff;
+    border-color: #38b6ff;
+  }
+  @media (max-width: 500px) {
+    .auth-modal {
+      padding: 1.2rem 0.5rem 1.2rem 0.5rem;
+      min-width: 0;
+    }
+    .auth-title {
+      font-size: 1.3rem;
+    }
+    .auth-desc {
       font-size: 1rem;
     }
   }
