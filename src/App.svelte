@@ -7,7 +7,7 @@
     native,
     fundPubkey,
     fundSigner,
-  } from "../../demo/src/lib/common";
+  } from "./lib/common";
   import { Keypair } from "@stellar/stellar-sdk";
   // No additional logic needed for static navbar
   let activeTab = "Home";
@@ -71,23 +71,20 @@
   let walletPublicKey: string = "";
   let isLoggedIn = false;
 
-  if (localStorage.hasOwnProperty("sp:keyId")) {
-    connect(localStorage.getItem("sp:keyId"));
+  const storedKeyId = localStorage.getItem("sp:keyId");
+  if (storedKeyId) {
+    connect(storedKeyId);
   }
 
   async function register() {
     const user = prompt("Give this passkey a name");
     if (!user) return;
     try {
-      const {
-        keyId: kid,
-        contractId: cid,
-        signedTx,
-        publicKey,
-      } = await account.createWallet("Borrowhood", user);
+      const result = await account.createWallet("Borrowhood", user);
+      const { keyId: kid, contractId: cid, signedTx } = result;
       const res = await server.send(signedTx);
       contractId = cid;
-      walletPublicKey = publicKey;
+      if ("publicKey" in result) walletPublicKey = result.publicKey;
       localStorage.setItem("sp:keyId", base64url(kid));
       isLoggedIn = true;
     } catch (err: any) {
@@ -96,16 +93,13 @@
   }
   async function connect(keyId_?: string) {
     try {
-      const {
-        keyId: kid,
-        contractId: cid,
-        publicKey,
-      } = await account.connectWallet({
+      const result = await account.connectWallet({
         keyId: keyId_,
         getContractId: (keyId) => server.getContractId({ keyId }),
       });
+      const { keyId: kid, contractId: cid } = result;
       contractId = cid;
-      walletPublicKey = publicKey;
+      if ("publicKey" in result) walletPublicKey = result.publicKey;
       localStorage.setItem("sp:keyId", base64url(kid));
       isLoggedIn = true;
     } catch (err: any) {
@@ -531,7 +525,7 @@
           <button class="auth-btn primary" on:click={reset}>Logout</button>
         {/if}
         {#if !isLoggedIn}
-          <button class="auth-btn primary" on:click={connect}
+          <button class="auth-btn primary" on:click={() => connect()}
             >Login with Passkey</button
           >
           <button class="auth-btn secondary" on:click={register}
