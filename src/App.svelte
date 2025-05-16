@@ -147,6 +147,9 @@
   let isLoggedIn = false;
   let walletInitialized = false;
 
+  // Add a computed APY color for dropdown and selected token
+  $: apyColor = lendBorrowMode === "BORROW" ? "#ffb84d" : "#3ee86b";
+
   onMount(async () => {
     // Initialize the wallet system
     try {
@@ -500,6 +503,10 @@
     selectedToken = t;
     showTokenDropdown = false;
   }
+
+  $: interestLabel =
+    lendBorrowMode === "BORROW" ? "You will pay:" : "You will earn:";
+  $: interestColor = lendBorrowMode === "BORROW" ? "#ffb84d" : "#3ee86b";
 </script>
 
 <div class="background-container">
@@ -764,7 +771,7 @@
                   <span class="token-ticker">{selectedToken}</span>
                   <span class="token-name">{tokenMeta[selectedToken].name}</span
                   >
-                  <span class="token-apy"
+                  <span class="token-apy" style="color: {apyColor}"
                     >{tokenMeta[selectedToken].apy}% APY</span
                   >
                   <span class="token-caret">▼</span>
@@ -787,11 +794,12 @@
                         <span class="token-name"
                           >{tokenMeta[t as TokenKey].name}</span
                         >
-                        <span class="token-apy"
-                          >{tokenMeta[t as TokenKey].apy}% Annual Interest</span
-                        >
-                        <span class="token-price"
-                          >{tokenMeta[t as TokenKey].price()} USD</span
+                        <span
+                          class="token-apy"
+                          style="color: {lendBorrowMode === 'BORROW'
+                            ? '#ffb84d'
+                            : '#3ee86b'}"
+                          >{tokenMeta[t as TokenKey].apy}% APY</span
                         >
                         <span class="token-caret">▼</span>
                       </div>
@@ -892,17 +900,22 @@
         <div class="right-column">
           {#if principal > 0 && months > 0}
             <div class="interest-summary">
-              <div class="interest-label">You will earn:</div>
-              <div class="interest-amount">
-                +{interest.toFixed(4)}
+              <div class="interest-label">{interestLabel}</div>
+              <div class="interest-amount" style="color: {interestColor}">
+                {lendBorrowMode === "BORROW" ? "-" : "+"}{interest.toFixed(4)}
                 {selectedToken} (${interestUsd})
               </div>
               <div class="interest-divider"></div>
               <div class="interest-total-row">
-                <span class="interest-total-label">Total to receive:</span>
-                <span class="interest-total-value"
-                  >{total.toFixed(4)} {selectedToken} (${totalUsd})</span
+                <span class="interest-total-label"
+                  >Total to {lendBorrowMode === "BORROW"
+                    ? "repay"
+                    : "receive"}:</span
                 >
+                <span class="interest-total-value">
+                  {total.toFixed(4)}
+                  {selectedToken} (${totalUsd})
+                </span>
               </div>
             </div>
           {/if}
@@ -1186,6 +1199,14 @@
         <span>Total Withdrawable:</span><span class="loan-modal-value"
           >{modalAsset.withdrawable}</span
         >
+      </div>
+      <!-- Button row at bottom -->
+      <div class="loan-modal-actions">
+        <button class="loan-modal-btn cancel" on:click={closeLoanModal}
+          >Cancel</button
+        >
+        <button class="loan-modal-btn repay">Repay</button>
+        <button class="loan-modal-btn withdraw">Withdraw</button>
       </div>
     </div>
   </div>
@@ -3448,16 +3469,20 @@
   /* Interest summary styles */
   .interest-summary {
     margin: 1.2rem 0 0.7rem 0;
-    background: linear-gradient(
-      90deg,
-      rgba(162, 89, 255, 0.08) 0%,
-      rgba(56, 182, 255, 0.08) 100%
-    );
-    border-radius: 1rem;
+    background: rgba(35, 32, 50, 0.55);
+    border-radius: 1.2rem;
     padding: 1.2rem 1.2rem 1.1rem 1.2rem;
-    box-shadow: 0 2px 12px 0 #a259ff11;
+    box-shadow:
+      0 8px 32px 0 #0008,
+      0 1.5px 8px 0 #a259ff22;
+    border: 1.5px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     font-size: 1.08rem;
     color: #fff;
+    transition:
+      box-shadow 0.18s,
+      background 0.18s;
   }
   .interest-label {
     font-weight: 700;
@@ -3729,5 +3754,50 @@
     text-align: right;
     display: block;
     width: 100%;
+  }
+  .loan-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2.2rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid #28243a;
+  }
+  .loan-modal-btn {
+    font-family: "Outfit", sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    padding: 0.7rem 1.7rem;
+    border: none;
+    border-radius: 0.8rem;
+    cursor: pointer;
+    transition:
+      background 0.18s,
+      color 0.18s;
+    box-shadow: 0 2px 12px 0 #a259ff22;
+  }
+  .loan-modal-btn.cancel {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    border: 1.5px solid #a259ff;
+  }
+  .loan-modal-btn.cancel:hover {
+    background: rgba(162, 89, 255, 0.18);
+    color: #fff;
+    border-color: #38b6ff;
+  }
+  .loan-modal-btn.repay {
+    background: linear-gradient(90deg, #38b6ff 0%, #a259ff 100%);
+    color: #fff;
+  }
+  .loan-modal-btn.repay:hover {
+    background: linear-gradient(90deg, #a259ff 0%, #38b6ff 100%);
+  }
+  .loan-modal-btn.withdraw {
+    background: linear-gradient(90deg, #a259ff 0%, #38b6ff 100%);
+    color: #fff;
+  }
+  .loan-modal-btn.withdraw:hover {
+    background: linear-gradient(90deg, #38b6ff 0%, #a259ff 100%);
   }
 </style>
