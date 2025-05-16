@@ -16,5 +16,11 @@
     "svelte-check": "^4.1.6",
     "typescript": "~5.8.3",
     "vite": "^6.3.5"
+  },
+  "dependencies": {
+    "@stellar/stellar-sdk": "^13.3.0",
+    "base64url": "^3.0.1",
+    "buffer": "^6.0.3",
+    "passkey-kit": "^0.10.24"
   }
 }
