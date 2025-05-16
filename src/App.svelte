@@ -36,16 +36,19 @@
     color: #fff;
   }
   .navbar {
-    width: 100vw;
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 2.5rem;
+    padding: 0 1.2rem;
     height: 70px;
     background: linear-gradient(90deg, #1a1333 0%, #231942 100%);
     box-shadow: 0 2px 16px 0 rgba(30, 0, 60, 0.12);
     position: relative;
     z-index: 10;
+    overflow-x: auto;
   }
   .logo {
     font-size: 2rem;
@@ -55,15 +58,18 @@
       0 0 8px #6f7cff,
       0 0 16px #6f7cff44;
     user-select: none;
-    margin-right: 2rem;
+    margin-right: 1rem;
     font-family: "New Rocker", cursive;
+    white-space: nowrap;
   }
   nav {
     display: flex;
-    gap: 2.5rem;
+    gap: 1.2rem;
     align-items: center;
     flex: 1;
     justify-content: flex-start;
+    min-width: 0;
+    overflow-x: auto;
   }
   .nav-tab {
     position: relative;
@@ -74,6 +80,7 @@
     padding: 0.5rem 0;
     transition: color 0.2s;
     font-family: "Outfit", sans-serif;
+    white-space: nowrap;
   }
   .nav-tab:hover,
   .nav-tab.active {
@@ -103,6 +110,7 @@
     display: flex;
     align-items: center;
     gap: 1.2rem;
+    min-width: 0;
   }
   .wallet-icon {
     width: 36px;
@@ -119,7 +127,7 @@
     font-family: "Outfit", sans-serif;
     font-weight: 700;
     font-size: 1.1rem;
-    padding: 0.7rem 2.2rem;
+    padding: 0.7rem 1.2rem;
     border: none;
     border-radius: 14px;
     background: linear-gradient(90deg, #a259ff 0%, #38b6ff 100%);
@@ -131,6 +139,7 @@
       box-shadow 0.13s,
       background 0.2s;
     outline: none;
+    white-space: nowrap;
   }
   .login-btn:hover {
     transform: translateY(-2px) scale(1.04);
@@ -141,5 +150,37 @@
     font-family: "Outfit", sans-serif;
     min-height: 80vh;
     padding: 2rem;
+  }
+  @media (max-width: 900px) {
+    .navbar {
+      padding: 0 0.5rem;
+    }
+    nav {
+      gap: 0.7rem;
+    }
+    .logo {
+      font-size: 1.3rem;
+      margin-right: 0.5rem;
+    }
+    .login-btn {
+      font-size: 1rem;
+      padding: 0.5rem 0.8rem;
+    }
+  }
+  @media (max-width: 600px) {
+    .navbar {
+      flex-direction: column;
+      height: auto;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+    nav {
+      width: 100%;
+      justify-content: flex-start;
+      gap: 0.5rem;
+    }
+    .right-group {
+      align-self: flex-end;
+    }
   }
 </style>
