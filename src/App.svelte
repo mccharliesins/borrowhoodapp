@@ -550,10 +550,12 @@
   $: showMax = lendBorrowMode === "LEND";
   $: showBalance = lendBorrowMode === "LEND";
   $: maxAmount =
-    selectedToken === "XLM" && tokenBalances.length > 0
-      ? Number(tokenBalances.find((t) => t.name === "XLM")?.balance || "0") /
-        10_000_000
-      : tokenBalanceMap[selectedToken];
+    lendBorrowMode === "LEND"
+      ? selectedToken === "XLM" && tokenBalances.length > 0
+        ? Number(tokenBalances.find((t) => t.name === "XLM")?.balance || "0") /
+          10_000_000
+        : tokenBalanceMap[selectedToken]
+      : calculateMaxBorrowAmount();
   $: isValid =
     !!amount &&
     +amount > 0 &&
@@ -563,7 +565,12 @@
       (duration === "custom" && +customMonths > 0 && +customMonths <= 12));
 
   function setMax() {
-    amount = maxAmount.toString();
+    if (lendBorrowMode === "LEND") {
+      amount = maxAmount.toString();
+    } else {
+      // For borrowing, limit to calculated max borrow amount
+      amount = calculateMaxBorrowAmount().toString();
+    }
   }
 
   function openAuthModal() {
@@ -648,6 +655,27 @@
     if (!isLoggedIn || !contractId) {
       alert("Please login first");
       openAuthModal();
+      return;
+    }
+
+    // Check if user has lending positions before allowing borrowing
+    if (lendBorrowMode === "BORROW" && calculateMaxBorrowAmount() <= 0) {
+      showSuccess(
+        "You need to lend assets first before borrowing. Borrowing capacity is 75% of your lending value.",
+        "⚠️"
+      );
+      return;
+    }
+
+    // Check if amount is within borrowing capacity
+    if (
+      lendBorrowMode === "BORROW" &&
+      Number(amount) > calculateMaxBorrowAmount()
+    ) {
+      showSuccess(
+        `Borrowing amount exceeds your capacity. Maximum allowed: ${calculateMaxBorrowAmount().toFixed(2)} ${selectedToken}`,
+        "⚠️"
+      );
       return;
     }
 
@@ -1054,6 +1082,14 @@
   $: interestLabel =
     lendBorrowMode === "BORROW" ? "You will pay:" : "You will earn:";
   $: interestColor = lendBorrowMode === "BORROW" ? "#ffb84d" : "#3ee86b";
+
+  function calculateMaxBorrowAmount() {
+    const totalLendingValue = lendingAssets.reduce(
+      (total, asset) => total + Number(asset.amount),
+      0
+    );
+    return totalLendingValue * 0.75;
+  }
 </script>
 
 <div class="background-container">
@@ -1232,342 +1268,386 @@
     </section>
   {/if}
   {#if activeTab === "Dashboard"}
-    <h1 class="dashboard-title">Dashboard</h1>
-    <section class="portfolio-card">
-      <h2 class="portfolio-title">Your Portfolio</h2>
-      <div class="portfolio-tabs">
-        <button
-          class="tab {dashboardTab === 'Lending' ? 'active' : ''}"
-          on:click={() => (dashboardTab = "Lending")}>Lending</button
-        >
-        <button
-          class="tab {dashboardTab === 'Borrowing' ? 'active' : ''}"
-          on:click={() => (dashboardTab = "Borrowing")}>Borrowing</button
-        >
+    {#if isLoggedIn}
+      <h1 class="dashboard-title">Dashboard</h1>
+      <section class="portfolio-card">
+        <h2 class="portfolio-title">Your Portfolio</h2>
+        <div class="portfolio-tabs">
+          <button
+            class="tab {dashboardTab === 'Lending' ? 'active' : ''}"
+            on:click={() => (dashboardTab = "Lending")}>Lending</button
+          >
+          <button
+            class="tab {dashboardTab === 'Borrowing' ? 'active' : ''}"
+            on:click={() => (dashboardTab = "Borrowing")}>Borrowing</button
+          >
+        </div>
+        {#if dashboardTab === "Lending"}
+          <div class="portfolio-table-wrap">
+            {#if lendingAssets.length > 0}
+              <table class="portfolio-table minimalist">
+                <thead>
+                  <tr>
+                    <th>Asset</th>
+                    <th>Amount</th>
+                    <th>Value (USD)</th>
+                    <th>APY</th>
+                    <th>Days Left</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {#each lendingAssets as asset}
+                    <tr>
+                      <td
+                        ><span class="asset-icon">{asset.icon}</span>
+                        <span class="asset-name">{asset.name}</span></td
+                      >
+                      <td>{asset.amount}</td>
+                      <td>{asset.value}</td>
+                      <td class="apy positive">{asset.apy}</td>
+                      <td>{asset.days}</td>
+                      <td
+                        ><button
+                          class="details-btn"
+                          on:click={() => openLoanModal(asset)}>Details</button
+                        ></td
+                      >
+                    </tr>
+                  {/each}
+                </tbody>
+              </table>
+            {:else}
+              <div class="empty-dashboard">
+                <div class="empty-icon">💼</div>
+                <h3>No Lending Activity Yet</h3>
+                <p>Start lending your assets to earn interest</p>
+                <button
+                  class="empty-action-btn"
+                  on:click={() => {
+                    activeTab = "Lend/Borrow";
+                    lendBorrowMode = "LEND";
+                  }}
+                >
+                  Start Lending
+                </button>
+              </div>
+            {/if}
+          </div>
+        {/if}
+        {#if dashboardTab === "Borrowing"}
+          <div class="portfolio-table-wrap">
+            {#if borrowingAssets.length > 0}
+              <table class="portfolio-table minimalist">
+                <thead>
+                  <tr>
+                    <th>Asset</th>
+                    <th>Amount</th>
+                    <th>Value (USD)</th>
+                    <th>APY</th>
+                    <th>Days Left</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {#each borrowingAssets as asset}
+                    <tr>
+                      <td
+                        ><span class="asset-icon">{asset.icon}</span>
+                        <span class="asset-name">{asset.name}</span></td
+                      >
+                      <td>{asset.amount}</td>
+                      <td>{asset.value}</td>
+                      <td class="apy negative">{asset.apy}</td>
+                      <td>{asset.days}</td>
+                      <td
+                        ><button
+                          class="details-btn"
+                          on:click={() => openLoanModal(asset)}>Details</button
+                        ></td
+                      >
+                    </tr>
+                  {/each}
+                </tbody>
+              </table>
+            {:else}
+              <div class="empty-dashboard">
+                <div class="empty-icon">🏦</div>
+                <h3>No Borrowing Activity Yet</h3>
+                <p>Borrow assets with your crypto as collateral</p>
+                <button
+                  class="empty-action-btn"
+                  on:click={() => {
+                    activeTab = "Lend/Borrow";
+                    lendBorrowMode = "BORROW";
+                  }}
+                >
+                  Start Borrowing
+                </button>
+              </div>
+            {/if}
+          </div>
+        {/if}
+      </section>
+    {:else}
+      <div class="wallet-auth-prompt">
+        <h2 class="auth-prompt-title">
+          <span class="gradient-text">Connect Your Wallet</span>
+        </h2>
+        <p class="auth-prompt-message">
+          Please sign in to access your dashboard and view your lending and
+          borrowing positions.
+        </p>
+        <button class="auth-btn primary" on:click={openAuthModal}>
+          Sign Up/Login
+        </button>
       </div>
-      {#if dashboardTab === "Lending"}
-        <div class="portfolio-table-wrap">
-          {#if lendingAssets.length > 0}
-            <table class="portfolio-table minimalist">
-              <thead>
-                <tr>
-                  <th>Asset</th>
-                  <th>Amount</th>
-                  <th>Value (USD)</th>
-                  <th>APY</th>
-                  <th>Days Left</th>
-                  <th>Details</th>
-                </tr>
-              </thead>
-              <tbody>
-                {#each lendingAssets as asset}
-                  <tr>
-                    <td
-                      ><span class="asset-icon">{asset.icon}</span>
-                      <span class="asset-name">{asset.name}</span></td
-                    >
-                    <td>{asset.amount}</td>
-                    <td>{asset.value}</td>
-                    <td class="apy positive">{asset.apy}</td>
-                    <td>{asset.days}</td>
-                    <td
-                      ><button
-                        class="details-btn"
-                        on:click={() => openLoanModal(asset)}>Details</button
-                      ></td
-                    >
-                  </tr>
-                {/each}
-              </tbody>
-            </table>
-          {:else}
-            <div class="empty-dashboard">
-              <div class="empty-icon">💼</div>
-              <h3>No Lending Activity Yet</h3>
-              <p>Start lending your assets to earn interest</p>
-              <button
-                class="empty-action-btn"
-                on:click={() => {
-                  activeTab = "Lend/Borrow";
-                  lendBorrowMode = "LEND";
-                }}
-              >
-                Start Lending
-              </button>
-            </div>
-          {/if}
-        </div>
-      {/if}
-      {#if dashboardTab === "Borrowing"}
-        <div class="portfolio-table-wrap">
-          {#if borrowingAssets.length > 0}
-            <table class="portfolio-table minimalist">
-              <thead>
-                <tr>
-                  <th>Asset</th>
-                  <th>Amount</th>
-                  <th>Value (USD)</th>
-                  <th>APY</th>
-                  <th>Days Left</th>
-                  <th>Details</th>
-                </tr>
-              </thead>
-              <tbody>
-                {#each borrowingAssets as asset}
-                  <tr>
-                    <td
-                      ><span class="asset-icon">{asset.icon}</span>
-                      <span class="asset-name">{asset.name}</span></td
-                    >
-                    <td>{asset.amount}</td>
-                    <td>{asset.value}</td>
-                    <td class="apy negative">{asset.apy}</td>
-                    <td>{asset.days}</td>
-                    <td
-                      ><button
-                        class="details-btn"
-                        on:click={() => openLoanModal(asset)}>Details</button
-                      ></td
-                    >
-                  </tr>
-                {/each}
-              </tbody>
-            </table>
-          {:else}
-            <div class="empty-dashboard">
-              <div class="empty-icon">🏦</div>
-              <h3>No Borrowing Activity Yet</h3>
-              <p>Borrow assets with your crypto as collateral</p>
-              <button
-                class="empty-action-btn"
-                on:click={() => {
-                  activeTab = "Lend/Borrow";
-                  lendBorrowMode = "BORROW";
-                }}
-              >
-                Start Borrowing
-              </button>
-            </div>
-          {/if}
-        </div>
-      {/if}
-    </section>
+    {/if}
   {/if}
   {#if activeTab === "Lend/Borrow"}
-    <section class="lendborrow-section">
-      <div class="lendborrow-toggle-row">
-        <div class="lendborrow-toggle">
-          <button
-            class="toggle-btn {lendBorrowMode === 'LEND' ? 'active' : ''}"
-            on:click={() => (lendBorrowMode = "LEND")}>LEND</button
-          >
-          <button
-            class="toggle-btn {lendBorrowMode === 'BORROW' ? 'active' : ''}"
-            on:click={() => (lendBorrowMode = "BORROW")}>BORROW</button
-          >
-        </div>
-      </div>
-      <div class="lendborrow-main">
-        <div class="lend-form-card">
-          <div class="form-row form-title-row">
-            <span class="form-title">Select Token</span>
-            <span class="form-help">?</span>
-          </div>
-          <div class="form-row">
-            <div
-              class="token-select custom-token-select"
-              tabindex="0"
-              on:click={() => (showTokenDropdown = !showTokenDropdown)}
-              on:blur={() => (showTokenDropdown = false)}
+    {#if isLoggedIn}
+      <section class="lendborrow-section">
+        <div class="lendborrow-toggle-row">
+          <div class="lendborrow-toggle">
+            <button
+              class="toggle-btn {lendBorrowMode === 'LEND' ? 'active' : ''}"
+              on:click={() => (lendBorrowMode = "LEND")}>LEND</button
             >
-              <div class="token-option-selected token-option-2col">
-                <div class="token-row">
-                  <span class="token-icon">{tokenMeta[selectedToken].icon}</span
-                  >
-                  <span class="token-ticker">{selectedToken}</span>
-                  <span class="token-name">{tokenMeta[selectedToken].name}</span
-                  >
-                  <span class="token-apy" style="color: {apyColor}"
-                    >{tokenMeta[selectedToken].apy}% APY</span
-                  >
-                  <span class="token-caret">▼</span>
-                </div>
-              </div>
-              {#if showTokenDropdown}
-                <div class="token-dropdown-list">
-                  {#each Object.keys(tokenMeta) as t}
-                    <div
-                      class="token-option token-option-2col {selectedToken === t
-                        ? 'active'
-                        : ''}"
-                      on:click={() => selectToken(t as TokenKey)}
-                    >
-                      <div class="token-row">
-                        <span class="token-icon"
-                          >{tokenMeta[t as TokenKey].icon}</span
-                        >
-                        <span class="token-ticker">{t}</span>
-                        <span class="token-name"
-                          >{tokenMeta[t as TokenKey].name}</span
-                        >
-                        <span
-                          class="token-apy"
-                          style="color: {lendBorrowMode === 'BORROW'
-                            ? '#ffb84d'
-                            : '#3ee86b'}"
-                          >{tokenMeta[t as TokenKey].apy}% APY</span
-                        >
-                        <span class="token-caret">▼</span>
-                      </div>
-                    </div>
-                  {/each}
-                </div>
-              {/if}
-            </div>
+            <button
+              class="toggle-btn {lendBorrowMode === 'BORROW' ? 'active' : ''}"
+              on:click={() => (lendBorrowMode = "BORROW")}>BORROW</button
+            >
           </div>
-          <div class="form-row">
-            <div class="form-label-row">
-              <span class="form-title">
-                Amount{amountUsd && ` (${amountUsd} USD)`}
-              </span>
-              {#if showBalance && lendBorrowMode === "LEND"}
-                <span class="form-balance">
-                  Balance: {parseFloat(
-                    (
-                      Number(
-                        tokenBalances.find((t) => t.name === selectedToken)
-                          ?.balance || "0"
-                      ) / 10_000_000
-                    ).toFixed(7)
-                  )}
-                  {selectedToken}
-                  <span class="form-balance-usd">
-                    ({(
-                      (Number(
-                        tokenBalances.find((t) => t.name === selectedToken)
-                          ?.balance || 0
-                      ) /
-                        10_000_000) *
-                      price
+        </div>
+        <div class="lendborrow-main">
+          <div class="lend-form-card">
+            <div class="form-row form-title-row">
+              <span class="form-title">Select Token</span>
+              <span class="form-help">?</span>
+            </div>
+            <div class="form-row">
+              <div
+                class="token-select custom-token-select"
+                tabindex="0"
+                on:click={() => (showTokenDropdown = !showTokenDropdown)}
+                on:blur={() => (showTokenDropdown = false)}
+              >
+                <div class="token-option-selected token-option-2col">
+                  <div class="token-row">
+                    <span class="token-icon"
+                      >{tokenMeta[selectedToken].icon}</span
+                    >
+                    <span class="token-ticker">{selectedToken}</span>
+                    <span class="token-name"
+                      >{tokenMeta[selectedToken].name}</span
+                    >
+                    <span class="token-apy" style="color: {apyColor}"
+                      >{tokenMeta[selectedToken].apy}% APY</span
+                    >
+                    <span class="token-caret">▼</span>
+                  </div>
+                </div>
+                {#if showTokenDropdown}
+                  <div class="token-dropdown-list">
+                    {#each Object.keys(tokenMeta) as t}
+                      <div
+                        class="token-option token-option-2col {selectedToken ===
+                        t
+                          ? 'active'
+                          : ''}"
+                        on:click={() => selectToken(t as TokenKey)}
+                      >
+                        <div class="token-row">
+                          <span class="token-icon"
+                            >{tokenMeta[t as TokenKey].icon}</span
+                          >
+                          <span class="token-ticker">{t}</span>
+                          <span class="token-name"
+                            >{tokenMeta[t as TokenKey].name}</span
+                          >
+                          <span
+                            class="token-apy"
+                            style="color: {lendBorrowMode === 'BORROW'
+                              ? '#ffb84d'
+                              : '#3ee86b'}"
+                            >{tokenMeta[t as TokenKey].apy}% APY</span
+                          >
+                          <span class="token-caret">▼</span>
+                        </div>
+                      </div>
+                    {/each}
+                  </div>
+                {/if}
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-label-row">
+                <span class="form-title">
+                  Amount{amountUsd && ` (${amountUsd} USD)`}
+                </span>
+                {#if showBalance && lendBorrowMode === "LEND"}
+                  <span class="form-balance">
+                    Balance: {parseFloat(
+                      (
+                        Number(
+                          tokenBalances.find((t) => t.name === selectedToken)
+                            ?.balance || "0"
+                        ) / 10_000_000
+                      ).toFixed(7)
+                    )}
+                    {selectedToken}
+                    <span class="form-balance-usd">
+                      ({(
+                        (Number(
+                          tokenBalances.find((t) => t.name === selectedToken)
+                            ?.balance || 0
+                        ) /
+                          10_000_000) *
+                        price
+                      ).toFixed(2)} USD)
+                    </span>
+                  </span>
+                {:else if lendBorrowMode === "BORROW"}
+                  <span class="form-balance form-balance-right">
+                    Max Borrow Capacity: {calculateMaxBorrowAmount().toFixed(2)}
+                    {selectedToken}<br />(${(
+                      calculateMaxBorrowAmount() * price
                     ).toFixed(2)} USD)
                   </span>
-                </span>
-              {:else if lendBorrowMode === "BORROW"}
-                <span class="form-balance form-balance-right">
-                  Max Borrow Capacity: 5338.98 XLM<br />(1575.00 USD)
-                </span>
-              {/if}
-            </div>
-            <div class="amount-input-row">
-              <input
-                class="amount-input"
-                type="number"
-                min="0"
-                bind:value={amount}
-                placeholder="Lend amount"
-              />
-              {#if showMax}
-                <button class="max-btn" on:click={setMax}>MAX</button>
-              {/if}
-            </div>
-          </div>
-          <div class="form-row">
-            <span class="form-title">Duration (Lending Period)</span>
-            <div class="duration-row">
-              <button
-                class="duration-btn {duration === '1' ? 'active' : ''}"
-                on:click={() => {
-                  duration = "1";
-                  customMonths = "";
-                }}>1 Month</button
-              >
-              <button
-                class="duration-btn {duration === '3' ? 'active' : ''}"
-                on:click={() => {
-                  duration = "3";
-                  customMonths = "";
-                }}>3 Months</button
-              >
-              <button
-                class="duration-btn {duration === 'custom' ? 'active' : ''}"
-                on:click={() => (duration = "custom")}
-                style="position: relative;"
-              >
-                Custom
-              </button>
-            </div>
-          </div>
-          {#if duration === "custom"}
-            <input
-              class="custom-months-input-below"
-              type="number"
-              min="1"
-              max="12"
-              bind:value={customMonths}
-              placeholder="Enter Duration in Months"
-              aria-label="Custom months"
-              style="margin-top: 0.7rem; width: 100%;"
-            />
-          {/if}
-          <button
-            class="lend-btn"
-            disabled={!isValid || lendInProgress}
-            on:click={handleLendBorrow}
-          >
-            {#if lendInProgress}
-              <span class="btn-spinner"></span> Processing...
-            {:else}
-              {lendBorrowMode === "LEND" ? "Lend" : "Borrow"} {selectedToken}
-            {/if}
-          </button>
-        </div>
-        <div class="right-column">
-          {#if principal > 0 && months > 0}
-            <div class="interest-summary">
-              <div class="interest-label">{interestLabel}</div>
-              <div class="interest-amount" style="color: {interestColor}">
-                {lendBorrowMode === "BORROW" ? "-" : "+"}{interest.toFixed(4)}
-                {selectedToken} (${interestUsd})
+                {/if}
               </div>
-              <div class="interest-divider"></div>
-              <div class="interest-total-row">
-                <span class="interest-total-label"
-                  >Total to {lendBorrowMode === "BORROW"
-                    ? "repay"
-                    : "receive"}:</span
+              <div class="amount-input-row">
+                <input
+                  class="amount-input"
+                  type="number"
+                  min="0"
+                  bind:value={amount}
+                  placeholder="Lend amount"
+                />
+                {#if showMax}
+                  <button class="max-btn" on:click={setMax}>MAX</button>
+                {/if}
+              </div>
+            </div>
+            <div class="form-row">
+              <span class="form-title">Duration (Lending Period)</span>
+              <div class="duration-row">
+                <button
+                  class="duration-btn {duration === '1' ? 'active' : ''}"
+                  on:click={() => {
+                    duration = "1";
+                    customMonths = "";
+                  }}>1 Month</button
                 >
-                <span class="interest-total-value">
-                  {total.toFixed(4)}
-                  {selectedToken} (${totalUsd})
-                </span>
+                <button
+                  class="duration-btn {duration === '3' ? 'active' : ''}"
+                  on:click={() => {
+                    duration = "3";
+                    customMonths = "";
+                  }}>3 Months</button
+                >
+                <button
+                  class="duration-btn {duration === 'custom' ? 'active' : ''}"
+                  on:click={() => (duration = "custom")}
+                  style="position: relative;"
+                >
+                  Custom
+                </button>
               </div>
             </div>
-          {/if}
-          <div class="rates-card">
-            <div class="rates-title">Current Rates</div>
-            <div class="rates-row">
-              <div class="rates-asset">XLM</div>
-              <div class="rates-info">
-                <span class="rates-label">Lending Interest</span>
-                <span class="rates-value lend">{rates.XLM.lend}%</span>
-                <span class="rates-label">Borrow Interest</span>
-                <span class="rates-value borrow">{rates.XLM.borrow}%</span>
+            {#if duration === "custom"}
+              <input
+                class="custom-months-input-below"
+                type="number"
+                min="1"
+                max="12"
+                bind:value={customMonths}
+                placeholder="Enter Duration in Months"
+                aria-label="Custom months"
+                style="margin-top: 0.7rem; width: 100%;"
+              />
+            {/if}
+            <button
+              class="lend-btn"
+              disabled={!isValid ||
+                lendInProgress ||
+                (lendBorrowMode === "BORROW" &&
+                  calculateMaxBorrowAmount() <= 0)}
+              on:click={handleLendBorrow}
+            >
+              {#if lendInProgress}
+                <span class="btn-spinner"></span> Processing...
+              {:else}
+                {lendBorrowMode === "LEND" ? "Lend" : "Borrow"} {selectedToken}
+              {/if}
+            </button>
+            {#if lendBorrowMode === "BORROW" && calculateMaxBorrowAmount() <= 0}
+              <div class="borrow-warning">
+                You need to lend assets first before borrowing. Borrowing
+                capacity is 75% of your lending value.
               </div>
-            </div>
-            <div class="rates-divider"></div>
-            <div class="rates-row">
-              <div class="rates-asset">USDC</div>
-              <div class="rates-info">
-                <span class="rates-label">Lending Interest</span>
-                <span class="rates-value lend">{rates.USDC.lend}%</span>
-                <span class="rates-label">Borrow Interest</span>
-                <span class="rates-value borrow">{rates.USDC.borrow}%</span>
+            {/if}
+          </div>
+          <div class="right-column">
+            {#if principal > 0 && months > 0}
+              <div class="interest-summary">
+                <div class="interest-label">{interestLabel}</div>
+                <div class="interest-amount" style="color: {interestColor}">
+                  {lendBorrowMode === "BORROW" ? "-" : "+"}{interest.toFixed(4)}
+                  {selectedToken} (${interestUsd})
+                </div>
+                <div class="interest-divider"></div>
+                <div class="interest-total-row">
+                  <span class="interest-total-label"
+                    >Total to {lendBorrowMode === "BORROW"
+                      ? "repay"
+                      : "receive"}:</span
+                  >
+                  <span class="interest-total-value">
+                    {total.toFixed(4)}
+                    {selectedToken} (${totalUsd})
+                  </span>
+                </div>
+              </div>
+            {/if}
+            <div class="rates-card">
+              <div class="rates-title">Current Rates</div>
+              <div class="rates-row">
+                <div class="rates-asset">XLM</div>
+                <div class="rates-info">
+                  <span class="rates-label">Lending Interest</span>
+                  <span class="rates-value lend">{rates.XLM.lend}%</span>
+                  <span class="rates-label">Borrow Interest</span>
+                  <span class="rates-value borrow">{rates.XLM.borrow}%</span>
+                </div>
+              </div>
+              <div class="rates-divider"></div>
+              <div class="rates-row">
+                <div class="rates-asset">USDC</div>
+                <div class="rates-info">
+                  <span class="rates-label">Lending Interest</span>
+                  <span class="rates-value lend">{rates.USDC.lend}%</span>
+                  <span class="rates-label">Borrow Interest</span>
+                  <span class="rates-value borrow">{rates.USDC.borrow}%</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
+      </section>
+    {:else}
+      <div class="wallet-auth-prompt">
+        <h2 class="auth-prompt-title">
+          <span class="gradient-text">Connect Your Wallet</span>
+        </h2>
+        <p class="auth-prompt-message">
+          Please sign in to start lending or borrowing assets on the platform.
+        </p>
+        <button class="auth-btn primary" on:click={openAuthModal}>
+          Sign Up/Login
+        </button>
       </div>
-    </section>
+    {/if}
   {/if}
   {#if activeTab === "Wallet"}
     <section class="wallet-section">
@@ -4765,5 +4845,16 @@
   }
   .loan-modal-btn.withdraw:hover {
     background: linear-gradient(90deg, #38b6ff 0%, #a259ff 100%);
+  }
+  .borrow-warning {
+    color: #ffb84d;
+    font-size: 0.95rem;
+    margin-top: 1rem;
+    background: rgba(255, 184, 77, 0.1);
+    border: 1px solid rgba(255, 184, 77, 0.3);
+    border-radius: 0.5rem;
+    padding: 0.8rem 1rem;
+    text-align: center;
+    font-weight: 500;
   }
 </style>
