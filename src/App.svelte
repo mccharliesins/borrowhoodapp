@@ -24,7 +24,23 @@
 </div>
 
 <main>
-  <!-- Main content placeholder -->
+  {#if activeTab === "Home"}
+    <section class="hero">
+      <h1 class="hero-title">
+        <span class="gradient-text">Decentralized Lending</span> for <br />
+        <span class="hero-title-bold">Everyone</span>
+      </h1>
+      <p class="hero-subtitle">
+        A simple, secure platform built on Stellar to lend and borrow<br />
+        cryptocurrency with no banks required.
+      </p>
+      <div class="hero-actions">
+        <button class="hero-btn primary">Start Borrowing</button>
+        <button class="hero-btn secondary">Lend & Earn</button>
+      </div>
+    </section>
+  {/if}
+  <!-- Main content placeholder for other tabs -->
 </main>
 
 <style>
@@ -190,6 +206,112 @@
     }
     .right-group {
       align-self: flex-end;
+    }
+  }
+  .hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    text-align: center;
+    background: radial-gradient(
+      ellipse at 60% 40%,
+      rgba(130, 71, 229, 0.18) 0%,
+      rgba(30, 0, 60, 0) 70%
+    );
+    border-radius: 2rem;
+    margin: 0 auto;
+    max-width: 900px;
+    box-shadow: 0 8px 64px 0 #0002;
+    padding: 2rem 1rem 3rem 1rem;
+  }
+  .hero-title {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 1.2rem;
+    line-height: 1.1;
+    letter-spacing: -1px;
+  }
+  .gradient-text {
+    background: linear-gradient(90deg, #c471f5 0%, #38b6ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-fill-color: transparent;
+    display: inline-block;
+  }
+  .hero-title-bold {
+    font-size: 3.2rem;
+    font-weight: 900;
+    color: #fff;
+    margin-top: 0.2rem;
+    display: inline-block;
+  }
+  .hero-subtitle {
+    font-size: 1.3rem;
+    color: #d1cbe7;
+    margin-bottom: 2.2rem;
+    margin-top: 0.5rem;
+    font-weight: 400;
+    line-height: 1.5;
+  }
+  .hero-actions {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .hero-btn {
+    font-family: "Outfit", sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    padding: 0.9rem 2.5rem;
+    border: none;
+    border-radius: 2rem;
+    cursor: pointer;
+    transition:
+      background 0.2s,
+      box-shadow 0.2s,
+      transform 0.13s;
+    box-shadow: 0 2px 16px 0 #0002;
+    margin-bottom: 0.5rem;
+  }
+  .hero-btn.primary {
+    background: linear-gradient(90deg, #a259ff 0%, #38b6ff 100%);
+    color: #fff;
+  }
+  .hero-btn.primary:hover {
+    background: linear-gradient(90deg, #38b6ff 0%, #a259ff 100%);
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: 0 4px 20px 0 #a259ff55;
+  }
+  .hero-btn.secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    border: 1.5px solid #a259ff;
+  }
+  .hero-btn.secondary:hover {
+    background: rgba(162, 89, 255, 0.18);
+    color: #fff;
+    border-color: #38b6ff;
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: 0 4px 20px 0 #38b6ff55;
+  }
+  @media (max-width: 700px) {
+    .hero-title,
+    .hero-title-bold {
+      font-size: 2.1rem;
+    }
+    .hero {
+      padding: 1.2rem 0.2rem 2rem 0.2rem;
+    }
+    .hero-actions {
+      gap: 0.7rem;
+    }
+    .hero-btn {
+      padding: 0.7rem 1.3rem;
+      font-size: 1rem;
     }
   }
 </style>
