@@ -170,6 +170,48 @@
       </div>
     </section>
   {/if}
+  {#if activeTab === "Dashboard"}
+    <h1 class="dashboard-title">Dashboard</h1>
+    <section class="portfolio-card">
+      <h2 class="portfolio-title">Your Portfolio</h2>
+      <div class="portfolio-tabs">
+        <button class="tab active">Lending</button>
+        <button class="tab">Borrowing</button>
+      </div>
+      <div class="portfolio-table-wrap">
+        <table class="portfolio-table">
+          <thead>
+            <tr>
+              <th>Asset</th>
+              <th>Amount</th>
+              <th>Value (USD)</th>
+              <th>APY</th>
+              <th>Days Left</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="asset-icon">🌟</span> XLM</td>
+              <td>1,200</td>
+              <td>$480.50</td>
+              <td class="apy positive">5.2%</td>
+              <td>0 days left</td>
+              <td><button class="details-btn">View Details</button></td>
+            </tr>
+            <tr>
+              <td><span class="asset-icon">💲</span> USDC</td>
+              <td>750</td>
+              <td>$750.00</td>
+              <td class="apy positive">8.1%</td>
+              <td>0 days left</td>
+              <td><button class="details-btn">View Details</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  {/if}
   <!-- Main content placeholder for other tabs -->
 </main>
 
