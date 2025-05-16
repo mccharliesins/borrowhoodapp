@@ -55,7 +55,9 @@
 
     <!-- Why Borrowhood Section -->
     <section class="why-section">
-      <h2 class="section-title">Why Borrowhood?</h2>
+      <h2 class="section-title">
+        <span class="gradient-text">Why</span> Borrowhood?
+      </h2>
       <div class="why-grid">
         <div class="why-item">
           <span class="why-icon">🌎</span>
@@ -108,7 +110,9 @@
 
     <!-- How Borrowhood Works Section -->
     <section class="how-section">
-      <h2 class="section-title">How Borrowhood Works</h2>
+      <h2 class="section-title">
+        How <span class="gradient-text">Borrowhood</span> Works
+      </h2>
       <div class="how-grid">
         <div class="how-item">
           <span class="how-icon">🔐</span>
@@ -577,15 +581,22 @@
     font-weight: 800;
     text-align: center;
     margin-bottom: 2.2rem;
-    color: #c471f5;
+    color: #fff;
     letter-spacing: -1px;
   }
   .why-grid,
   .how-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 2.2rem 2.5rem;
     justify-content: center;
+    gap: 2.2rem 2.5rem;
+  }
+  .why-grid {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+  }
+  .how-grid {
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: 1fr;
   }
   .why-item,
   .how-item {
@@ -606,7 +617,7 @@
   .why-item:hover,
   .how-item:hover {
     box-shadow: 0 4px 32px 0 #a259ff33;
-    background: rgba(60, 30, 90, 0.7);
+    background: linear-gradient(90deg, #a259ff33 0%, #38b6ff33 100%);
   }
   .why-icon,
   .how-icon {
@@ -619,7 +630,11 @@
     font-size: 1.18rem;
     font-weight: 700;
     margin-bottom: 0.7rem;
-    color: #8ecaff;
+    background: linear-gradient(90deg, #c471f5 0%, #38b6ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-fill-color: transparent;
   }
   .why-item p,
   .how-item p {
@@ -688,9 +703,14 @@
     box-shadow: 0 4px 20px 0 #38b6ff55;
   }
   @media (max-width: 700px) {
-    .why-grid,
+    .why-grid {
+      grid-template-columns: 1fr;
+      grid-template-rows: repeat(6, 1fr);
+      gap: 1.2rem;
+    }
     .how-grid {
       grid-template-columns: 1fr;
+      grid-template-rows: repeat(4, 1fr);
       gap: 1.2rem;
     }
     .cta-section {
