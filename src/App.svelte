@@ -132,6 +132,8 @@
   let price: number = 0.29; // fallback
   let tokenBalanceMap = { XLM: 1500, USDC: 2000 };
   let isLoadingPrice = false;
+  // Add loading state for lend/borrow
+  let lendInProgress = false;
 
   // Rates (could be fetched, but hardcoded for now)
   const rates = {
@@ -449,6 +451,25 @@
     modalAsset = null;
     document.body.style.overflow = "";
   }
+
+  // Add a mock handler for Lend/Borrow button
+  async function handleLendBorrow() {
+    if (!isValid) return;
+    lendInProgress = true;
+    // Simulate async processing (replace with real logic)
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    lendInProgress = false;
+    // Optionally show a success message or reset form
+  }
+
+  // Add live interest and total calculation
+  $: months = duration === "custom" ? +customMonths : +duration;
+  $: principal = +amount || 0;
+  $: apy = rates[selectedToken].lend;
+  $: interest = principal * (apy / 100) * (months / 12);
+  $: total = principal + interest;
+  $: interestUsd = (interest * price).toFixed(2);
+  $: totalUsd = (total * price).toFixed(2);
 </script>
 
 <div class="background-container">
@@ -756,44 +777,74 @@
               >
               <button
                 class="duration-btn {duration === 'custom' ? 'active' : ''}"
-                on:click={() => (duration = "custom")}>Custom</button
+                on:click={() => (duration = "custom")}
+                style="position: relative;"
               >
-              {#if duration === "custom"}
-                <input
-                  class="custom-months-input"
-                  type="number"
-                  min="1"
-                  max="12"
-                  bind:value={customMonths}
-                  placeholder="6"
-                />
-                <span class="custom-months-label">month (max 12)</span>
-              {/if}
+                Custom
+              </button>
             </div>
           </div>
-          <button class="lend-btn" disabled={!isValid}
-            >Lend {selectedToken}</button
+          {#if duration === "custom"}
+            <input
+              class="custom-months-input-below"
+              type="number"
+              min="1"
+              max="12"
+              bind:value={customMonths}
+              placeholder="Enter Duration in Months"
+              aria-label="Custom months"
+              style="margin-top: 0.7rem; width: 100%;"
+            />
+          {/if}
+          <button
+            class="lend-btn"
+            disabled={!isValid || lendInProgress}
+            on:click={handleLendBorrow}
           >
+            {#if lendInProgress}
+              <span class="btn-spinner"></span> Processing...
+            {:else}
+              Lend {selectedToken}
+            {/if}
+          </button>
         </div>
-        <div class="rates-card">
-          <div class="rates-title">Current Rates</div>
-          <div class="rates-row">
-            <div class="rates-asset">XLM</div>
-            <div class="rates-info">
-              <span class="rates-label">Lending Interest</span>
-              <span class="rates-value lend">{rates.XLM.lend}%</span>
-              <span class="rates-label">Borrow Interest</span>
-              <span class="rates-value borrow">{rates.XLM.borrow}%</span>
+        <div class="right-column">
+          {#if principal > 0 && months > 0}
+            <div class="interest-summary">
+              <div class="interest-label">You will earn:</div>
+              <div class="interest-amount">
+                +{interest.toFixed(4)}
+                {selectedToken} (${interestUsd})
+              </div>
+              <div class="interest-divider"></div>
+              <div class="interest-total-row">
+                <span class="interest-total-label">Total to receive:</span>
+                <span class="interest-total-value"
+                  >{total.toFixed(4)} {selectedToken} (${totalUsd})</span
+                >
+              </div>
             </div>
-          </div>
-          <div class="rates-divider"></div>
-          <div class="rates-row">
-            <div class="rates-asset">USDC</div>
-            <div class="rates-info">
-              <span class="rates-label">Lending Interest</span>
-              <span class="rates-value lend">{rates.USDC.lend}%</span>
-              <span class="rates-label">Borrow Interest</span>
-              <span class="rates-value borrow">{rates.USDC.borrow}%</span>
+          {/if}
+          <div class="rates-card">
+            <div class="rates-title">Current Rates</div>
+            <div class="rates-row">
+              <div class="rates-asset">XLM</div>
+              <div class="rates-info">
+                <span class="rates-label">Lending Interest</span>
+                <span class="rates-value lend">{rates.XLM.lend}%</span>
+                <span class="rates-label">Borrow Interest</span>
+                <span class="rates-value borrow">{rates.XLM.borrow}%</span>
+              </div>
+            </div>
+            <div class="rates-divider"></div>
+            <div class="rates-row">
+              <div class="rates-asset">USDC</div>
+              <div class="rates-info">
+                <span class="rates-label">Lending Interest</span>
+                <span class="rates-value lend">{rates.USDC.lend}%</span>
+                <span class="rates-label">Borrow Interest</span>
+                <span class="rates-value borrow">{rates.USDC.borrow}%</span>
+              </div>
             </div>
           </div>
         </div>
@@ -2215,16 +2266,22 @@
     margin-bottom: 2.5rem;
   }
   .lendborrow-toggle {
-    background: #232032;
-    border-radius: 2.5rem;
-    box-shadow: 0 2px 16px 0 #0002;
     display: flex;
     align-items: center;
-    padding: 0.3rem 0.3rem;
+    justify-content: center;
+    background: rgba(35, 32, 50, 0.55);
+    border-radius: 2.5rem;
+    box-shadow: 0 2px 16px 0 #0002;
+    padding: 0.3rem;
     gap: 0.2rem;
     min-width: 320px;
+    border: 1.5px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
   .toggle-btn {
+    flex: 1 1 0;
+    text-align: center;
     font-family: "Outfit", sans-serif;
     font-size: 1.2rem;
     font-weight: 700;
@@ -2232,28 +2289,57 @@
     border-radius: 2rem;
     background: none;
     color: #bdb8d7;
-    padding: 0.7rem 2.5rem;
+    padding: 0.7rem 0;
+    min-width: 0;
     cursor: pointer;
     transition:
       background 0.18s,
       color 0.18s;
+    outline: none;
+    position: relative;
+    z-index: 1;
   }
   .toggle-btn.active {
     background: linear-gradient(90deg, #a259ff 0%, #38b6ff 100%);
     color: #fff;
     box-shadow: 0 2px 12px 0 #a259ff33;
+    animation: bounceToggle 0.38s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+  }
+  @keyframes bounceToggle {
+    0% {
+      transform: scale(1);
+    }
+    30% {
+      transform: scale(1.12, 0.92);
+    }
+    50% {
+      transform: scale(0.96, 1.08);
+    }
+    70% {
+      transform: scale(1.04, 0.98);
+    }
+    100% {
+      transform: scale(1);
+    }
   }
   .lendborrow-main {
     display: flex;
     gap: 2.5rem;
-    align-items: flex-start;
+    align-items: stretch;
     flex-wrap: wrap;
+    justify-content: center;
   }
-  .lend-form-card {
-    background: #232032;
-    border-radius: 1.2rem;
-    box-shadow: 0 8px 48px 0 #0008;
-    padding: 2.2rem 2.2rem 1.5rem 2.2rem;
+  .lend-form-card,
+  .rates-card {
+    background: rgba(35, 32, 50, 0.55);
+    border-radius: 1.5rem;
+    box-shadow:
+      0 8px 48px 0 #0008,
+      0 1.5px 8px 0 #a259ff22;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1.5px solid rgba(255, 255, 255, 0.08);
+    padding: 2.5rem 2.2rem 2.2rem 2.2rem;
     min-width: 370px;
     max-width: 480px;
     flex: 1 1 370px;
@@ -2261,6 +2347,45 @@
     display: flex;
     flex-direction: column;
     gap: 1.2rem;
+    transition:
+      box-shadow 0.18s,
+      background 0.18s;
+  }
+  .lend-form-card {
+    margin-right: 0.5rem;
+  }
+  .rates-card {
+    margin-left: 0.5rem;
+  }
+  .lendborrow-toggle-row {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2.5rem;
+  }
+  .lendborrow-toggle {
+    background: rgba(35, 32, 50, 0.55);
+    border-radius: 2.5rem;
+    box-shadow: 0 2px 16px 0 #0002;
+    display: flex;
+    align-items: center;
+    padding: 0.3rem 0.3rem;
+    gap: 0.2rem;
+    min-width: 320px;
+    border: 1.5px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  @media (max-width: 900px) {
+    .lendborrow-main {
+      flex-direction: column;
+      gap: 2.2rem;
+    }
+    .lend-form-card,
+    .rates-card {
+      min-width: 0;
+      max-width: 100%;
+      margin: 0;
+    }
   }
   .form-row {
     margin-bottom: 1.1rem;
@@ -2391,31 +2516,36 @@
     align-items: center;
     margin-top: 0.7rem;
     flex-wrap: wrap;
+    width: 100%;
   }
   .duration-btn {
-    background: none;
-    border: 1.5px solid #28243a;
+    flex: 1 1 0;
+    min-width: 0;
+    background: rgba(255, 255, 255, 0.04);
+    border: 2px solid rgba(162, 89, 255, 0.18);
     color: #bdb8d7;
     font-size: 1.1rem;
     font-weight: 700;
     border-radius: 0.8rem;
-    padding: 0.9rem 2.2rem;
+    padding: 0.9rem 0;
     cursor: pointer;
     transition:
       background 0.18s,
       color 0.18s,
       border 0.18s;
+    outline: none;
+    text-align: center;
   }
   .duration-btn.active {
     background: linear-gradient(90deg, #a259ff 0%, #38b6ff 100%);
     color: #fff;
-    border: 1.5px solid #a259ff;
+    border: 2.5px solid #38b6ff;
     box-shadow: 0 2px 12px 0 #a259ff33;
   }
   .custom-months-input {
     width: 3.5rem;
     background: #18122b;
-    border: 1.5px solid #28243a;
+    border: 2px solid #38b6ff;
     border-radius: 0.7rem;
     color: #fff;
     font-size: 1.1rem;
@@ -2424,11 +2554,7 @@
     outline: none;
     margin-left: 0.7rem;
     margin-right: 0.3rem;
-  }
-  .custom-months-label {
-    color: #bdb8d7;
-    font-size: 1.05rem;
-    font-weight: 500;
+    text-align: center;
   }
   .lend-btn {
     width: 100%;
@@ -2454,19 +2580,6 @@
     cursor: not-allowed;
     opacity: 0.7;
     box-shadow: none;
-  }
-  .rates-card {
-    background: #232032;
-    border-radius: 1.2rem;
-    box-shadow: 0 8px 48px 0 #0008;
-    padding: 2.2rem 2.2rem 1.5rem 2.2rem;
-    min-width: 370px;
-    max-width: 480px;
-    flex: 1 1 370px;
-    color: #fff;
-    display: flex;
-    flex-direction: column;
-    gap: 1.2rem;
   }
   .rates-title {
     font-size: 1.3rem;
@@ -2514,18 +2627,6 @@
     margin: 1.1rem 0 1.1rem 0;
     width: 100%;
   }
-  @media (max-width: 900px) {
-    .lendborrow-main {
-      flex-direction: column;
-      gap: 2.2rem;
-    }
-    .lend-form-card,
-    .rates-card {
-      min-width: 0;
-      max-width: 100%;
-    }
-  }
-  /* Wallet Page Styles */
   .wallet-section {
     max-width: 1100px;
     margin: 0 auto;
@@ -3139,5 +3240,213 @@
     100% {
       transform: translate(2%, -4%) scale(1.02) rotate(1deg);
     }
+  }
+
+  .lend-form-card {
+    padding: 2rem 1.5rem 1.5rem 1.5rem;
+    max-width: 420px;
+  }
+  .lend-form-card .form-title {
+    font-size: 1.08rem;
+    font-weight: 700;
+    margin-bottom: 0.2rem;
+  }
+  .lend-form-card .form-help {
+    font-size: 1.1rem;
+    width: 1.7rem;
+    height: 1.7rem;
+  }
+  .lend-form-card .token-select {
+    padding: 0.7rem 0.9rem 0.4rem 0.9rem;
+    border-radius: 0.6rem;
+    min-height: unset;
+  }
+  .lend-form-card .token-dropdown {
+    font-size: 1.05rem;
+    margin-bottom: 0.05rem;
+  }
+  .lend-form-card .token-info {
+    font-size: 0.95rem;
+    gap: 0.7rem;
+  }
+  .lend-form-card .token-apy,
+  .lend-form-card .token-price {
+    font-size: 0.95rem;
+  }
+  .lend-form-card .token-select {
+    min-height: 0;
+    margin-bottom: 0.5rem;
+  }
+  .lend-form-card .form-label-row {
+    font-size: 1rem;
+    gap: 0.7rem;
+  }
+  .lend-form-card .form-balance,
+  .lend-form-card .form-balance-usd {
+    font-size: 0.98rem;
+  }
+  .lend-form-card .amount-input-row {
+    gap: 0.5rem;
+  }
+  .lend-form-card .amount-input {
+    font-size: 1rem;
+    padding: 0.8rem 1rem;
+    border-radius: 0.7rem;
+  }
+  .lend-form-card .max-btn {
+    font-size: 1rem;
+    padding: 0.4rem 1rem;
+    border-radius: 1rem;
+  }
+  .lend-form-card .duration-row {
+    gap: 0.7rem;
+    margin-top: 0.5rem;
+  }
+  .lend-form-card .duration-btn {
+    font-size: 1rem;
+    padding: 0.7rem 1.3rem;
+    border-radius: 0.7rem;
+  }
+  .lend-form-card .custom-months-input {
+    font-size: 0.98rem;
+    padding: 0.5rem 0.7rem;
+    border-radius: 0.6rem;
+    width: 3rem;
+  }
+  .lend-form-card .custom-months-label {
+    font-size: 0.95rem;
+  }
+  .lend-form-card .lend-btn {
+    font-size: 1.08rem;
+    padding: 1rem 0;
+    border-radius: 1rem;
+    margin-top: 1.2rem;
+  }
+  @media (max-width: 600px) {
+    .lend-form-card {
+      padding: 1.1rem 0.5rem 1rem 0.5rem;
+      max-width: 100%;
+    }
+  }
+  /* Spinner for Lend/Borrow button */
+  .btn-spinner {
+    display: inline-block;
+    width: 1.2em;
+    height: 1.2em;
+    border: 2.5px solid #a259ff44;
+    border-top: 2.5px solid #38b6ff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 0.7em;
+    vertical-align: middle;
+  }
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Interest summary styles */
+  .interest-summary {
+    margin: 1.2rem 0 0.7rem 0;
+    background: linear-gradient(
+      90deg,
+      rgba(162, 89, 255, 0.08) 0%,
+      rgba(56, 182, 255, 0.08) 100%
+    );
+    border-radius: 1rem;
+    padding: 1.2rem 1.2rem 1.1rem 1.2rem;
+    box-shadow: 0 2px 12px 0 #a259ff11;
+    font-size: 1.08rem;
+    color: #fff;
+  }
+  .interest-label {
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  .interest-amount {
+    color: #3ee86b;
+    font-size: 1.15rem;
+    font-weight: 800;
+    margin-bottom: 0.7rem;
+  }
+  .interest-divider {
+    border-bottom: 1px solid #28243a;
+    margin: 0.7rem 0 0.7rem 0;
+  }
+  .interest-total-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 1.08rem;
+  }
+  .interest-total-label {
+    color: #bdb8d7;
+    font-weight: 600;
+  }
+  .interest-total-value {
+    color: #fff;
+    font-weight: 700;
+  }
+  .right-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    flex: 1 1 370px;
+    min-width: 370px;
+    max-width: 480px;
+  }
+  @media (max-width: 900px) {
+    .lendborrow-main {
+      flex-direction: column;
+      gap: 2.2rem;
+    }
+    .right-column {
+      min-width: 0;
+      max-width: 100%;
+    }
+  }
+  .custom-months-input-in-btn {
+    width: 2.5rem;
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 700;
+    outline: none;
+    margin-left: 0.5rem;
+    text-align: center;
+    border-bottom: 2px solid #38b6ff;
+    transition: border 0.18s;
+  }
+  .custom-months-input-in-btn:focus {
+    border-bottom: 2px solid #a259ff;
+  }
+  .custom-explainer {
+    margin-top: 0.7rem;
+    color: #bdb8d7;
+    font-size: 0.98rem;
+    text-align: left;
+    padding-left: 0.1rem;
+  }
+  .custom-months-input-below {
+    width: 100%;
+    background: #18122b;
+    border: 2px solid #38b6ff;
+    border-radius: 0.7rem;
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 0.7rem 1rem;
+    outline: none;
+    text-align: center;
+    box-sizing: border-box;
+    transition: border 0.18s;
+  }
+  .custom-months-input-below:focus {
+    border: 2px solid #a259ff;
   }
 </style>
