@@ -534,7 +534,11 @@
     {/each}
   </nav>
   <div class="right-group">
-    <button class="login-btn" on:click={openAuthModal}>Sign Up/Login</button>
+    {#if isLoggedIn}
+      <button class="login-btn" on:click={reset}>Logout</button>
+    {:else}
+      <button class="login-btn" on:click={openAuthModal}>Sign Up/Login</button>
+    {/if}
   </div>
 </div>
 
