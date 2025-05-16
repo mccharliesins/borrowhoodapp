@@ -1,0 +1,1 @@
+C:\Users\lenovo\Downloads\borrowhood-main\borrowhood-main\contracts\lending\target\wasm32-unknown-unknown\release\liblending.rlib: C:\Users\lenovo\Downloads\borrowhood-main\borrowhood-main\contracts\lending\src\lib.rs

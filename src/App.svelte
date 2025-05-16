@@ -491,7 +491,11 @@
   $: amountUsd = amount && !isNaN(+amount) ? (+amount * price).toFixed(2) : "";
   $: showMax = lendBorrowMode === "LEND";
   $: showBalance = lendBorrowMode === "LEND";
-  $: maxAmount = tokenBalanceMap[selectedToken];
+  $: maxAmount =
+    selectedToken === "XLM" && tokenBalances.length > 0
+      ? Number(tokenBalances.find((t) => t.name === "XLM")?.balance || "0") /
+        10_000_000
+      : tokenBalanceMap[selectedToken];
   $: isValid =
     !!amount &&
     +amount > 0 &&
@@ -922,15 +926,23 @@
               </span>
               {#if showBalance && lendBorrowMode === "LEND"}
                 <span class="form-balance">
-                  Balance: {tokenBalances.find((t) => t.name === selectedToken)
-                    ?.balance || "0"}
+                  Balance: {parseFloat(
+                    (
+                      Number(
+                        tokenBalances.find((t) => t.name === selectedToken)
+                          ?.balance || "0"
+                      ) / 10_000_000
+                    ).toFixed(7)
+                  )}
                   {selectedToken}
                   <span class="form-balance-usd">
                     ({(
-                      Number(
+                      (Number(
                         tokenBalances.find((t) => t.name === selectedToken)
                           ?.balance || 0
-                      ) * price
+                      ) /
+                        10_000_000) *
+                      price
                     ).toFixed(2)} USD)
                   </span>
                 </span>
@@ -1133,71 +1145,6 @@
                 <div class="empty-state">No tokens found in your wallet</div>
               {/if}
             </div>
-          </div>
-
-          <div class="transaction-history">
-            <h2 class="section-heading">
-              Transaction History
-              <button class="refresh-btn" on:click={fetchRecentTransactions}>
-                Refresh
-              </button>
-            </h2>
-            {#if txLoading}
-              <div class="loading-container">
-                <div class="loading-spinner"></div>
-                <div class="loading-text">Loading transactions...</div>
-              </div>
-            {:else if recentTransactions && recentTransactions.length > 0}
-              <div class="transaction-list">
-                {#each recentTransactions.slice(currentPage * 5, (currentPage + 1) * 5) as tx}
-                  <div class="transaction-item">
-                    <div class="tx-type">{tx.type}</div>
-                    <div class="tx-details">
-                      <span class="tx-amount"
-                        >{tx.amount} {tx.asset_code || "XLM"}</span
-                      >
-                      <span class="tx-addresses">
-                        From: <span class="tx-address"
-                          >{tx.from || tx.source_account || "-"}</span
-                        >
-                        To: <span class="tx-address">{tx.to || "-"}</span>
-                      </span>
-                      <span class="tx-time"
-                        >{new Date(tx.created_at).toLocaleString()}</span
-                      >
-                    </div>
-                  </div>
-                {/each}
-              </div>
-              <div class="pagination">
-                <button
-                  class="pagination-btn"
-                  disabled={currentPage === 0}
-                  on:click={() => (currentPage = Math.max(0, currentPage - 1))}
-                >
-                  Previous
-                </button>
-                <span class="pagination-info">
-                  Page {currentPage + 1} of {Math.ceil(
-                    recentTransactions.length / 5
-                  )}
-                </span>
-                <button
-                  class="pagination-btn"
-                  disabled={currentPage >=
-                    Math.ceil(recentTransactions.length / 5) - 1}
-                  on:click={() =>
-                    (currentPage = Math.min(
-                      Math.ceil(recentTransactions.length / 5) - 1,
-                      currentPage + 1
-                    ))}
-                >
-                  Next
-                </button>
-              </div>
-            {:else}
-              <div class="empty-state">No transaction history found</div>
-            {/if}
           </div>
         </div>
       {:else}
