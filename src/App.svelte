@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   // No additional logic needed for static navbar
   let activeTab = "Home";
   const tabs = ["Home", "Dashboard", "Lend/Borrow", "Wallet"];
@@ -38,7 +39,57 @@
 
   // Modal state
   let showLoanModal = false;
-  let modalAsset = null;
+  let modalAsset: any = null;
+
+  // Lend/Borrow tab state
+  let lendBorrowMode: "LEND" | "BORROW" = "LEND";
+  let selectedToken: "XLM" | "USDC" = "XLM";
+  let amount: string = "";
+  let duration: "1" | "3" | "custom" = "3";
+  let customMonths: string = "";
+  let price: number = 0.29; // fallback
+  let balance = { XLM: 1500, USDC: 2000 };
+  let isLoadingPrice = false;
+
+  // Rates (could be fetched, but hardcoded for now)
+  const rates = {
+    XLM: { lend: 5.2, borrow: 6.8 },
+    USDC: { lend: 8.1, borrow: 9.5 },
+  };
+
+  async function fetchPrice() {
+    isLoadingPrice = true;
+    let id = selectedToken === "XLM" ? "stellar" : "usd-coin";
+    try {
+      const res = await fetch(
+        `https://api.coingecko.com/api/v3/simple/price?ids=${id}&vs_currencies=usd`
+      );
+      const data = await res.json();
+      price = selectedToken === "XLM" ? data.stellar.usd : data["usd-coin"].usd;
+    } catch (e) {
+      price = selectedToken === "XLM" ? 0.29 : 1;
+    }
+    isLoadingPrice = false;
+  }
+
+  $: selectedToken, fetchPrice();
+  onMount(fetchPrice);
+
+  $: amountUsd = amount && !isNaN(+amount) ? (+amount * price).toFixed(2) : "";
+  $: showMax = lendBorrowMode === "LEND";
+  $: showBalance = lendBorrowMode === "LEND";
+  $: maxAmount = balance[selectedToken];
+  $: isValid =
+    !!amount &&
+    +amount > 0 &&
+    (!showMax || +amount <= maxAmount) &&
+    (duration === "1" ||
+      duration === "3" ||
+      (duration === "custom" && +customMonths > 0 && +customMonths <= 12));
+
+  function setMax() {
+    amount = maxAmount.toString();
+  }
 
   function openAuthModal() {
     showAuthModal = true;
@@ -51,7 +102,7 @@
   function handleKeydown(event: KeyboardEvent) {
     if (event.key === "Escape") closeAuthModal();
   }
-  function openLoanModal(asset) {
+  function openLoanModal(asset: any) {
     modalAsset = asset;
     showLoanModal = true;
     document.body.style.overflow = "hidden";
@@ -272,7 +323,131 @@
       {/if}
     </section>
   {/if}
-  <!-- Main content placeholder for other tabs -->
+  {#if activeTab === "Lend/Borrow"}
+    <section class="lendborrow-section">
+      <div class="lendborrow-toggle-row">
+        <div class="lendborrow-toggle">
+          <button
+            class="toggle-btn {lendBorrowMode === 'LEND' ? 'active' : ''}"
+            on:click={() => (lendBorrowMode = "LEND")}>LEND</button
+          >
+          <button
+            class="toggle-btn {lendBorrowMode === 'BORROW' ? 'active' : ''}"
+            on:click={() => (lendBorrowMode = "BORROW")}>BORROW</button
+          >
+        </div>
+      </div>
+      <div class="lendborrow-main">
+        <div class="lend-form-card">
+          <div class="form-row form-title-row">
+            <span class="form-title">Select Token</span>
+            <span class="form-help">?</span>
+          </div>
+          <div class="form-row">
+            <div class="token-select">
+              <select bind:value={selectedToken} class="token-dropdown">
+                <option value="XLM">XLM</option>
+                <option value="USDC">USDC</option>
+              </select>
+              <div class="token-info">
+                <span class="token-apy">{rates[selectedToken].lend}% APY</span>
+                <span class="token-price"
+                  >{isLoadingPrice ? "..." : price.toFixed(2)} USD</span
+                >
+              </div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-label-row">
+              <span class="form-title"
+                >Amount{amountUsd && ` (${amountUsd} USD)`}</span
+              >
+              {#if showBalance}
+                <span class="form-balance"
+                  >Balance: {balance[selectedToken]}
+                  {selectedToken}
+                  <span class="form-balance-usd"
+                    >({(balance[selectedToken] * price).toFixed(2)} USD)</span
+                  ></span
+                >
+              {/if}
+            </div>
+            <div class="amount-input-row">
+              <input
+                class="amount-input"
+                type="number"
+                min="0"
+                bind:value={amount}
+                placeholder="Lend amount"
+              />
+              {#if showMax}
+                <button class="max-btn" on:click={setMax}>MAX</button>
+              {/if}
+            </div>
+          </div>
+          <div class="form-row">
+            <span class="form-title">Duration (Lending Period)</span>
+            <div class="duration-row">
+              <button
+                class="duration-btn {duration === '1' ? 'active' : ''}"
+                on:click={() => {
+                  duration = "1";
+                  customMonths = "";
+                }}>1 Month</button
+              >
+              <button
+                class="duration-btn {duration === '3' ? 'active' : ''}"
+                on:click={() => {
+                  duration = "3";
+                  customMonths = "";
+                }}>3 Months</button
+              >
+              <button
+                class="duration-btn {duration === 'custom' ? 'active' : ''}"
+                on:click={() => (duration = "custom")}>Custom</button
+              >
+              {#if duration === "custom"}
+                <input
+                  class="custom-months-input"
+                  type="number"
+                  min="1"
+                  max="12"
+                  bind:value={customMonths}
+                  placeholder="6"
+                />
+                <span class="custom-months-label">month (max 12)</span>
+              {/if}
+            </div>
+          </div>
+          <button class="lend-btn" disabled={!isValid}
+            >Lend {selectedToken}</button
+          >
+        </div>
+        <div class="rates-card">
+          <div class="rates-title">Current Rates</div>
+          <div class="rates-row">
+            <div class="rates-asset">XLM</div>
+            <div class="rates-info">
+              <span class="rates-label">Lending Interest</span>
+              <span class="rates-value lend">{rates.XLM.lend}%</span>
+              <span class="rates-label">Borrow Interest</span>
+              <span class="rates-value borrow">{rates.XLM.borrow}%</span>
+            </div>
+          </div>
+          <div class="rates-divider"></div>
+          <div class="rates-row">
+            <div class="rates-asset">USDC</div>
+            <div class="rates-info">
+              <span class="rates-label">Lending Interest</span>
+              <span class="rates-value lend">{rates.USDC.lend}%</span>
+              <span class="rates-label">Borrow Interest</span>
+              <span class="rates-value borrow">{rates.USDC.borrow}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  {/if}
 </main>
 
 {#if showAuthModal}
@@ -1128,6 +1303,327 @@
     .loan-modal-row,
     .loan-modal-value {
       font-size: 0.98rem;
+    }
+  }
+  .lendborrow-section {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2.5rem 1.2rem 3rem 1.2rem;
+  }
+  .lendborrow-toggle-row {
+    display: flex;
+    justify-content: flex-start;
+    margin-bottom: 2.5rem;
+  }
+  .lendborrow-toggle {
+    background: #232032;
+    border-radius: 2.5rem;
+    box-shadow: 0 2px 16px 0 #0002;
+    display: flex;
+    align-items: center;
+    padding: 0.3rem 0.3rem;
+    gap: 0.2rem;
+    min-width: 320px;
+  }
+  .toggle-btn {
+    font-family: "Outfit", sans-serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 2rem;
+    background: none;
+    color: #bdb8d7;
+    padding: 0.7rem 2.5rem;
+    cursor: pointer;
+    transition:
+      background 0.18s,
+      color 0.18s;
+  }
+  .toggle-btn.active {
+    background: linear-gradient(90deg, #a259ff 0%, #38b6ff 100%);
+    color: #fff;
+    box-shadow: 0 2px 12px 0 #a259ff33;
+  }
+  .lendborrow-main {
+    display: flex;
+    gap: 2.5rem;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .lend-form-card {
+    background: #232032;
+    border-radius: 1.2rem;
+    box-shadow: 0 8px 48px 0 #0008;
+    padding: 2.2rem 2.2rem 1.5rem 2.2rem;
+    min-width: 370px;
+    max-width: 480px;
+    flex: 1 1 370px;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+  }
+  .form-row {
+    margin-bottom: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .form-title-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.2rem;
+  }
+  .form-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #fff;
+  }
+  .form-help {
+    font-size: 1.3rem;
+    color: #bdb8d7;
+    background: #18122b;
+    border-radius: 50%;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+  }
+  .token-select {
+    width: 100%;
+    background: #232032;
+    border-radius: 0.8rem;
+    border: 1.5px solid #28243a;
+    padding: 1.2rem 1.2rem 0.7rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    position: relative;
+  }
+  .token-dropdown {
+    width: 100%;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 2rem;
+    font-weight: 800;
+    outline: none;
+    margin-bottom: 0.2rem;
+    appearance: none;
+    cursor: pointer;
+  }
+  .token-info {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+  .token-apy {
+    color: #3ee86b;
+    font-size: 1.1rem;
+  }
+  .token-price {
+    color: #38b6ff;
+    font-size: 1.1rem;
+  }
+  .form-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.2rem;
+  }
+  .form-balance {
+    color: #bdb8d7;
+    font-size: 1.05rem;
+    font-weight: 500;
+  }
+  .form-balance-usd {
+    color: #38b6ff;
+    font-size: 1.05rem;
+    font-weight: 500;
+    margin-left: 0.2rem;
+  }
+  .amount-input-row {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+  }
+  .amount-input {
+    flex: 1;
+    background: #18122b;
+    border: 1.5px solid #28243a;
+    border-radius: 0.7rem;
+    color: #fff;
+    font-size: 1.15rem;
+    font-weight: 600;
+    padding: 1rem 1.2rem;
+    outline: none;
+    transition: border 0.18s;
+  }
+  .amount-input:focus {
+    border: 1.5px solid #a259ff;
+  }
+  .max-btn {
+    background: none;
+    border: none;
+    color: #c471f5;
+    font-size: 1.1rem;
+    font-weight: 700;
+    padding: 0.5rem 1.2rem;
+    border-radius: 1.2rem;
+    cursor: pointer;
+    transition:
+      background 0.18s,
+      color 0.18s;
+  }
+  .max-btn:hover {
+    background: #a259ff22;
+    color: #fff;
+  }
+  .duration-row {
+    display: flex;
+    gap: 1.1rem;
+    align-items: center;
+    margin-top: 0.7rem;
+    flex-wrap: wrap;
+  }
+  .duration-btn {
+    background: none;
+    border: 1.5px solid #28243a;
+    color: #bdb8d7;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border-radius: 0.8rem;
+    padding: 0.9rem 2.2rem;
+    cursor: pointer;
+    transition:
+      background 0.18s,
+      color 0.18s,
+      border 0.18s;
+  }
+  .duration-btn.active {
+    background: linear-gradient(90deg, #a259ff 0%, #38b6ff 100%);
+    color: #fff;
+    border: 1.5px solid #a259ff;
+    box-shadow: 0 2px 12px 0 #a259ff33;
+  }
+  .custom-months-input {
+    width: 3.5rem;
+    background: #18122b;
+    border: 1.5px solid #28243a;
+    border-radius: 0.7rem;
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 0.7rem 0.7rem;
+    outline: none;
+    margin-left: 0.7rem;
+    margin-right: 0.3rem;
+  }
+  .custom-months-label {
+    color: #bdb8d7;
+    font-size: 1.05rem;
+    font-weight: 500;
+  }
+  .lend-btn {
+    width: 100%;
+    margin-top: 1.7rem;
+    background: linear-gradient(90deg, #a259ff 0%, #38b6ff 100%);
+    color: #fff;
+    font-size: 1.2rem;
+    font-weight: 800;
+    border: none;
+    border-radius: 1.2rem;
+    padding: 1.2rem 0;
+    cursor: pointer;
+    box-shadow: 0 2px 12px 0 #a259ff33;
+    transition:
+      background 0.18s,
+      box-shadow 0.18s,
+      color 0.18s;
+    opacity: 1;
+  }
+  .lend-btn:disabled {
+    background: #232042;
+    color: #bdb8d7;
+    cursor: not-allowed;
+    opacity: 0.7;
+    box-shadow: none;
+  }
+  .rates-card {
+    background: #232032;
+    border-radius: 1.2rem;
+    box-shadow: 0 8px 48px 0 #0008;
+    padding: 2.2rem 2.2rem 1.5rem 2.2rem;
+    min-width: 370px;
+    max-width: 480px;
+    flex: 1 1 370px;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+  }
+  .rates-title {
+    font-size: 1.3rem;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+    color: #fff;
+  }
+  .rates-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.2rem;
+    gap: 1.2rem;
+  }
+  .rates-asset {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #fff;
+    min-width: 70px;
+  }
+  .rates-info {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+  }
+  .rates-label {
+    color: #bdb8d7;
+    font-size: 1.05rem;
+    font-weight: 500;
+    margin-right: 0.3rem;
+  }
+  .rates-value.lend {
+    color: #3ee86b;
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-right: 1.2rem;
+  }
+  .rates-value.borrow {
+    color: #ffb84d;
+    font-size: 1.15rem;
+    font-weight: 700;
+  }
+  .rates-divider {
+    border-bottom: 1.5px solid #28243a;
+    margin: 1.1rem 0 1.1rem 0;
+    width: 100%;
+  }
+  @media (max-width: 900px) {
+    .lendborrow-main {
+      flex-direction: column;
+      gap: 2.2rem;
+    }
+    .lend-form-card,
+    .rates-card {
+      min-width: 0;
+      max-width: 100%;
     }
   }
 </style>
