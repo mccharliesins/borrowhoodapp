@@ -91,8 +91,40 @@
   // Dashboard tab state
   let dashboardTab = "Lending";
 
-  // Lending data
-  const lendingAssets = [
+  // Define types for assets
+  type LendingAsset = {
+    icon: string;
+    name: string;
+    amount: string;
+    value: string;
+    apy: string;
+    days: string;
+    duration: string;
+    start: string;
+    interest: string;
+    withdrawable: string;
+    txid?: string;
+    dueDate?: string;
+  };
+
+  type BorrowingAsset = {
+    icon: string;
+    name: string;
+    amount: string;
+    value: string;
+    apy: string;
+    days: string;
+    duration: string;
+    start: string;
+    interest: string;
+    due_date: string;
+    repayable: string;
+    collateral: string;
+    txid?: string;
+  };
+
+  // Lending data - initialize with example data and will be updated from localStorage
+  let lendingAssets: LendingAsset[] = [
     {
       icon: "🌟",
       name: "XLM",
@@ -119,8 +151,8 @@
     },
   ];
 
-  // Borrowing data
-  const borrowingAssets = [
+  // Borrowing data - initialize with example data and will be updated from localStorage
+  let borrowingAssets: BorrowingAsset[] = [
     {
       icon: "🌟",
       name: "XLM",
@@ -151,9 +183,21 @@
     },
   ];
 
+  // Function to update dashboard data from localStorage
+  function updateDashboardFromLocalStorage() {
+    const storedLendings = loadLocalLendings();
+    const storedBorrowings = loadLocalBorrowings();
+
+    // Only use the data from local storage, no sample data
+    lendingAssets = [...storedLendings];
+    borrowingAssets = [...storedBorrowings];
+  }
+
   // Modal state
   let showLoanModal = false;
   let modalAsset: any = null;
+  let withdrawInProgress = false;
+  let repayInProgress = false;
 
   // Lend/Borrow tab state
   let lendBorrowMode: "LEND" | "BORROW" = "LEND";
@@ -179,6 +223,12 @@
   let isLoggedIn = false;
   let walletInitialized = false;
 
+  // Success popup state
+  let showSuccessPopup = false;
+  let successMessage = "";
+  let successIcon = "";
+  let successTimer: any = null;
+
   // Add a computed APY color for dropdown and selected token
   $: apyColor = lendBorrowMode === "BORROW" ? "#ffb84d" : "#3ee86b";
 
@@ -196,6 +246,9 @@
 
       // Fetch initial price
       fetchPrice();
+
+      // Load any existing lend/borrow data from localStorage
+      updateDashboardFromLocalStorage();
     } catch (err) {
       console.error("Failed to initialize wallet:", err);
     }
@@ -486,6 +539,11 @@
     fetchRecentTransactions();
   }
 
+  // When the active tab changes to Dashboard, update data from localStorage
+  $: if (activeTab === "Dashboard") {
+    updateDashboardFromLocalStorage();
+  }
+
   $: selectedToken, fetchPrice();
 
   $: amountUsd = amount && !isNaN(+amount) ? (+amount * price).toFixed(2) : "";
@@ -530,14 +588,428 @@
     document.body.style.overflow = "";
   }
 
-  // Add a mock handler for Lend/Borrow button
+  // Function to show success popup
+  function showSuccess(message: string, icon: string = "✅") {
+    // Clear any existing timer
+    if (successTimer) {
+      clearTimeout(successTimer);
+    }
+
+    // Set popup content
+    successMessage = message;
+    successIcon = icon;
+    showSuccessPopup = true;
+
+    // Auto-hide after 4 seconds
+    successTimer = setTimeout(() => {
+      showSuccessPopup = false;
+    }, 4000);
+  }
+
+  // Local storage functions for simulation
+  function saveLocalLending(asset: any) {
+    const storedLendings = JSON.parse(
+      localStorage.getItem("borrowhood_lendings") || "[]"
+    );
+    storedLendings.push(asset);
+    localStorage.setItem("borrowhood_lendings", JSON.stringify(storedLendings));
+  }
+
+  function saveLocalBorrowing(asset: any) {
+    const storedBorrowings = JSON.parse(
+      localStorage.getItem("borrowhood_borrowings") || "[]"
+    );
+    storedBorrowings.push(asset);
+    localStorage.setItem(
+      "borrowhood_borrowings",
+      JSON.stringify(storedBorrowings)
+    );
+  }
+
+  function loadLocalLendings() {
+    const storedLendings = JSON.parse(
+      localStorage.getItem("borrowhood_lendings") || "[]"
+    );
+    return storedLendings;
+  }
+
+  function loadLocalBorrowings() {
+    const storedBorrowings = JSON.parse(
+      localStorage.getItem("borrowhood_borrowings") || "[]"
+    );
+    return storedBorrowings;
+  }
+
+  // Handler for Lend/Borrow button
   async function handleLendBorrow() {
     if (!isValid) return;
+
+    // Check if user is logged in
+    if (!isLoggedIn || !contractId) {
+      alert("Please login first");
+      openAuthModal();
+      return;
+    }
+
     lendInProgress = true;
-    // Simulate async processing (replace with real logic)
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    lendInProgress = false;
-    // Optionally show a success message or reset form
+
+    try {
+      // Set the destination wallet for simulation
+      const destinationWallet =
+        "GCZT3FLZ4SUUJYWKC5KSHHNG63IGHJK475QYNYA75OHJQ577A5AD5MXE";
+
+      if (lendBorrowMode === "LEND") {
+        // Calculate the amount in Stroops (Stellar's smallest unit)
+        const amountInStroops = BigInt(Math.floor(Number(amount) * 10_000_000));
+
+        // Create the transfer operation
+        const transferOp = await native.transfer({
+          from: contractId,
+          to: destinationWallet,
+          amount: amountInStroops,
+        });
+
+        // Sign the transaction using user's passkey
+        const storedKeyId = localStorage.getItem("sp:keyId");
+        if (!storedKeyId) {
+          throw new Error("Login session expired. Please login again.");
+        }
+
+        await account.sign(transferOp, { keyId: storedKeyId });
+
+        // Send the transaction
+        const result = await server.send(transferOp.built!);
+
+        // Create a record of the lending
+        const currentDate = new Date();
+        const durationMonths =
+          duration === "custom" ? Number(customMonths) : Number(duration);
+        const dueDate = new Date(currentDate);
+        dueDate.setMonth(dueDate.getMonth() + durationMonths);
+
+        // Calculate interest
+        const principal = Number(amount);
+        const interestRate = rates[selectedToken].lend;
+        const interestAmount =
+          principal * (interestRate / 100) * (durationMonths / 12);
+
+        // Create the lending asset record
+        const lendingAsset = {
+          icon: tokenMeta[selectedToken].icon,
+          name: selectedToken,
+          amount: amount,
+          value: `$${(principal * price).toFixed(2)}`,
+          apy: `${interestRate}%`,
+          days: `${durationMonths * 30} days left`,
+          duration: `${durationMonths} month${durationMonths > 1 ? "s" : ""}`,
+          start: currentDate.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          }),
+          interest: `+$${interestAmount.toFixed(2)}`,
+          withdrawable: `${(principal + interestAmount).toFixed(2)} ${selectedToken}`,
+          txid: result.hash || "simulated-tx",
+          dueDate: dueDate.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          }),
+        };
+
+        // Save to local storage
+        saveLocalLending(lendingAsset);
+
+        // Update the dashboard data
+        updateDashboardFromLocalStorage();
+
+        // Update wallet balance
+        await getWalletBalance();
+        await fetchTokenBalances();
+
+        // Show success message
+        showSuccess(
+          `Successfully lent ${amount} ${selectedToken}. You will earn ${interestAmount.toFixed(2)} ${selectedToken} in interest.`,
+          "💰"
+        );
+
+        // Reset form
+        amount = "";
+      } else if (lendBorrowMode === "BORROW") {
+        // For borrowing simulation, we don't actually transfer funds out
+        // but we create a record of the borrowing to display on dashboard
+
+        const currentDate = new Date();
+        const durationMonths =
+          duration === "custom" ? Number(customMonths) : Number(duration);
+        const dueDate = new Date(currentDate);
+        dueDate.setMonth(dueDate.getMonth() + durationMonths);
+
+        // Calculate interest
+        const principal = Number(amount);
+        const interestRate = rates[selectedToken].borrow;
+        const interestAmount =
+          principal * (interestRate / 100) * (durationMonths / 12);
+
+        // Create the borrowing asset record
+        const borrowingAsset = {
+          icon: tokenMeta[selectedToken].icon,
+          name: selectedToken,
+          amount: amount,
+          value: `$${(principal * price).toFixed(2)}`,
+          apy: `${interestRate}%`,
+          days: `${durationMonths * 30} days left`,
+          duration: `${durationMonths} month${durationMonths > 1 ? "s" : ""}`,
+          start: currentDate.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          }),
+          interest: `-$${interestAmount.toFixed(2)}`,
+          due_date: dueDate.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          }),
+          repayable: `${(principal + interestAmount).toFixed(2)} ${selectedToken}`,
+          collateral: `${(principal * 1.5).toFixed(2)} ${selectedToken}`,
+          txid: "simulated-borrow-tx",
+        };
+
+        // Save to local storage
+        saveLocalBorrowing(borrowingAsset);
+
+        // Update the dashboard data
+        updateDashboardFromLocalStorage();
+
+        // Simulate adding funds to the user's wallet
+        await simulateAddFunds(Number(amount));
+
+        // Show success message
+        showSuccess(
+          `Successfully borrowed ${amount} ${selectedToken}. You will need to repay ${(principal + interestAmount).toFixed(2)} ${selectedToken} by ${dueDate.toLocaleDateString()}.`,
+          "🏦"
+        );
+
+        // Reset form
+        amount = "";
+      }
+    } catch (error: any) {
+      console.error("Transaction error:", error);
+      showSuccess(`Error: ${error.message || "Unknown error occurred"}`, "❌");
+    } finally {
+      lendInProgress = false;
+    }
+  }
+
+  // Function to simulate adding funds for borrowing
+  async function simulateAddFunds(amountToAdd: number) {
+    try {
+      // Convert to Stroops
+      const amountInStroops = BigInt(Math.floor(amountToAdd * 10_000_000));
+
+      // Use the demo's fundWallet approach to add funds to the user's wallet
+      const { built, ...transfer } = await native.transfer({
+        to: contractId,
+        from: fundPubkey,
+        amount: amountInStroops,
+      });
+
+      await transfer.signAuthEntries({
+        address: fundPubkey,
+        signAuthEntry: fundSigner.signAuthEntry,
+      });
+
+      const res = await server.send(built!);
+      console.log("Fund transaction result:", res);
+
+      // Update wallet balance
+      await getWalletBalance();
+      await fetchTokenBalances();
+    } catch (error) {
+      console.error("Error simulating add funds:", error);
+    }
+  }
+
+  // Handle withdrawing from a lending position
+  async function handleWithdrawLoan(asset: any) {
+    if (!isLoggedIn || !contractId) {
+      alert("Please login first");
+      openAuthModal();
+      return;
+    }
+
+    withdrawInProgress = true;
+
+    try {
+      // Parse the withdrawable amount from the asset
+      const withdrawableText = asset.withdrawable;
+      const withdrawableMatch = withdrawableText.match(/^([\d,.]+)\s+(\w+)$/);
+
+      if (!withdrawableMatch) {
+        throw new Error("Could not parse withdrawable amount");
+      }
+
+      const withdrawableAmount = parseFloat(
+        withdrawableMatch[1].replace(/,/g, "")
+      );
+      const withdrawableToken = withdrawableMatch[2];
+
+      // Add a transaction to the recent transactions list for visualization
+      recentTransactions = [
+        {
+          type: "WITHDRAW",
+          amount: withdrawableAmount.toString(),
+          asset_code: withdrawableToken,
+          from: "Lending Pool",
+          to: contractId,
+          created_at: new Date().toISOString(),
+        },
+        ...recentTransactions,
+      ];
+
+      // Show a transaction initiation message
+      showSuccess(
+        `Processing withdrawal of ${withdrawableAmount} ${withdrawableToken}...`,
+        "⏳"
+      );
+
+      // Simulate adding the funds to the user's wallet
+      await simulateAddFunds(withdrawableAmount);
+
+      // Add a small delay to make the loading state visible (simulating blockchain confirmation)
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // Remove the lending position from local storage
+      const storedLendings = loadLocalLendings();
+      const updatedLendings = storedLendings.filter(
+        (lending: any) => lending.txid !== asset.txid
+      );
+      localStorage.setItem(
+        "borrowhood_lendings",
+        JSON.stringify(updatedLendings)
+      );
+
+      // Update the dashboard data
+      updateDashboardFromLocalStorage();
+
+      // Update wallet balance to show new funds
+      await getWalletBalance();
+      await fetchTokenBalances();
+
+      // Close the modal
+      closeLoanModal();
+
+      // Show success message
+      showSuccess(
+        `Successfully withdrawn ${withdrawableAmount} ${withdrawableToken} from your lending position`,
+        "💸"
+      );
+    } catch (error: any) {
+      console.error("Error withdrawing loan:", error);
+      showSuccess(`Error: ${error.message || "Unknown error occurred"}`, "❌");
+    } finally {
+      withdrawInProgress = false;
+    }
+  }
+
+  // Handle repaying a loan
+  async function handleRepayLoan(asset: any) {
+    if (!isLoggedIn || !contractId) {
+      alert("Please login first");
+      openAuthModal();
+      return;
+    }
+
+    repayInProgress = true;
+
+    try {
+      // Parse the repayable amount from the asset
+      const repayableText = asset.repayable;
+      const repayableMatch = repayableText.match(/^([\d,.]+)\s+(\w+)$/);
+
+      if (!repayableMatch) {
+        throw new Error("Could not parse repayable amount");
+      }
+
+      const repayableAmount = parseFloat(repayableMatch[1].replace(/,/g, ""));
+      const repayableToken = repayableMatch[2];
+
+      // Check if user has enough balance
+      const currentBalance = walletBalance
+        ? Number(walletBalance) / 10_000_000
+        : 0;
+
+      if (repayableToken === "XLM" && repayableAmount > currentBalance) {
+        throw new Error(
+          `Insufficient balance. You have ${currentBalance.toFixed(7)} XLM, but need ${repayableAmount.toFixed(7)} XLM.`
+        );
+      }
+
+      // Set the destination wallet for simulation
+      const destinationWallet =
+        "GCZT3FLZ4SUUJYWKC5KSHHNG63IGHJK475QYNYA75OHJQ577A5AD5MXE";
+
+      // For XLM, perform an actual transaction
+      if (repayableToken === "XLM") {
+        // Calculate the amount in Stroops (Stellar's smallest unit)
+        const amountInStroops = BigInt(
+          Math.floor(repayableAmount * 10_000_000)
+        );
+
+        // Create the transfer operation
+        const transferOp = await native.transfer({
+          from: contractId,
+          to: destinationWallet,
+          amount: amountInStroops,
+        });
+
+        // Sign the transaction using user's passkey
+        const storedKeyId = localStorage.getItem("sp:keyId");
+        if (!storedKeyId) {
+          throw new Error("Login session expired. Please login again.");
+        }
+
+        await account.sign(transferOp, { keyId: storedKeyId });
+
+        // Send the transaction
+        const result = await server.send(transferOp.built!);
+      }
+
+      // Add a small delay to make the loading state visible (simulating blockchain confirmation)
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // Remove the borrowing position from local storage
+      const storedBorrowings = loadLocalBorrowings();
+      const updatedBorrowings = storedBorrowings.filter(
+        (borrowing: any) => borrowing.txid !== asset.txid
+      );
+      localStorage.setItem(
+        "borrowhood_borrowings",
+        JSON.stringify(updatedBorrowings)
+      );
+
+      // Update the dashboard data
+      updateDashboardFromLocalStorage();
+
+      // Close the modal
+      closeLoanModal();
+
+      // Show success message
+      showSuccess(
+        `Successfully repaid ${repayableAmount} ${repayableToken} loan`,
+        "✅"
+      );
+
+      // Update wallet balance
+      await getWalletBalance();
+      await fetchTokenBalances();
+    } catch (error: any) {
+      console.error("Error repaying loan:", error);
+      showSuccess(`Error: ${error.message || "Unknown error occurred"}`, "❌");
+    } finally {
+      repayInProgress = false;
+    }
   }
 
   // Add live interest and total calculation
@@ -775,74 +1247,108 @@
       </div>
       {#if dashboardTab === "Lending"}
         <div class="portfolio-table-wrap">
-          <table class="portfolio-table minimalist">
-            <thead>
-              <tr>
-                <th>Asset</th>
-                <th>Amount</th>
-                <th>Value (USD)</th>
-                <th>APY</th>
-                <th>Days Left</th>
-                <th>Details</th>
-              </tr>
-            </thead>
-            <tbody>
-              {#each lendingAssets as asset}
+          {#if lendingAssets.length > 0}
+            <table class="portfolio-table minimalist">
+              <thead>
                 <tr>
-                  <td
-                    ><span class="asset-icon">{asset.icon}</span>
-                    <span class="asset-name">{asset.name}</span></td
-                  >
-                  <td>{asset.amount}</td>
-                  <td>{asset.value}</td>
-                  <td class="apy positive">{asset.apy}</td>
-                  <td>{asset.days}</td>
-                  <td
-                    ><button
-                      class="details-btn"
-                      on:click={() => openLoanModal(asset)}>Details</button
-                    ></td
-                  >
+                  <th>Asset</th>
+                  <th>Amount</th>
+                  <th>Value (USD)</th>
+                  <th>APY</th>
+                  <th>Days Left</th>
+                  <th>Details</th>
                 </tr>
-              {/each}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {#each lendingAssets as asset}
+                  <tr>
+                    <td
+                      ><span class="asset-icon">{asset.icon}</span>
+                      <span class="asset-name">{asset.name}</span></td
+                    >
+                    <td>{asset.amount}</td>
+                    <td>{asset.value}</td>
+                    <td class="apy positive">{asset.apy}</td>
+                    <td>{asset.days}</td>
+                    <td
+                      ><button
+                        class="details-btn"
+                        on:click={() => openLoanModal(asset)}>Details</button
+                      ></td
+                    >
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          {:else}
+            <div class="empty-dashboard">
+              <div class="empty-icon">💼</div>
+              <h3>No Lending Activity Yet</h3>
+              <p>Start lending your assets to earn interest</p>
+              <button
+                class="empty-action-btn"
+                on:click={() => {
+                  activeTab = "Lend/Borrow";
+                  lendBorrowMode = "LEND";
+                }}
+              >
+                Start Lending
+              </button>
+            </div>
+          {/if}
         </div>
       {/if}
       {#if dashboardTab === "Borrowing"}
         <div class="portfolio-table-wrap">
-          <table class="portfolio-table minimalist">
-            <thead>
-              <tr>
-                <th>Asset</th>
-                <th>Amount</th>
-                <th>Value (USD)</th>
-                <th>APY</th>
-                <th>Days Left</th>
-                <th>Details</th>
-              </tr>
-            </thead>
-            <tbody>
-              {#each borrowingAssets as asset}
+          {#if borrowingAssets.length > 0}
+            <table class="portfolio-table minimalist">
+              <thead>
                 <tr>
-                  <td
-                    ><span class="asset-icon">{asset.icon}</span>
-                    <span class="asset-name">{asset.name}</span></td
-                  >
-                  <td>{asset.amount}</td>
-                  <td>{asset.value}</td>
-                  <td class="apy negative">{asset.apy}</td>
-                  <td>{asset.days}</td>
-                  <td
-                    ><button
-                      class="details-btn"
-                      on:click={() => openLoanModal(asset)}>Details</button
-                    ></td
-                  >
+                  <th>Asset</th>
+                  <th>Amount</th>
+                  <th>Value (USD)</th>
+                  <th>APY</th>
+                  <th>Days Left</th>
+                  <th>Details</th>
                 </tr>
-              {/each}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {#each borrowingAssets as asset}
+                  <tr>
+                    <td
+                      ><span class="asset-icon">{asset.icon}</span>
+                      <span class="asset-name">{asset.name}</span></td
+                    >
+                    <td>{asset.amount}</td>
+                    <td>{asset.value}</td>
+                    <td class="apy negative">{asset.apy}</td>
+                    <td>{asset.days}</td>
+                    <td
+                      ><button
+                        class="details-btn"
+                        on:click={() => openLoanModal(asset)}>Details</button
+                      ></td
+                    >
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          {:else}
+            <div class="empty-dashboard">
+              <div class="empty-icon">🏦</div>
+              <h3>No Borrowing Activity Yet</h3>
+              <p>Borrow assets with your crypto as collateral</p>
+              <button
+                class="empty-action-btn"
+                on:click={() => {
+                  activeTab = "Lend/Borrow";
+                  lendBorrowMode = "BORROW";
+                }}
+              >
+                Start Borrowing
+              </button>
+            </div>
+          {/if}
         </div>
       {/if}
     </section>
@@ -1011,7 +1517,7 @@
             {#if lendInProgress}
               <span class="btn-spinner"></span> Processing...
             {:else}
-              Lend {selectedToken}
+              {lendBorrowMode === "LEND" ? "Lend" : "Borrow"} {selectedToken}
             {/if}
           </button>
         </div>
@@ -1306,16 +1812,51 @@
       </div>
       <!-- Button row at bottom -->
       <div class="loan-modal-actions">
-        <button class="loan-modal-btn cancel" on:click={closeLoanModal}
-          >Cancel</button
+        <button
+          class="loan-modal-btn cancel"
+          on:click={closeLoanModal}
+          disabled={withdrawInProgress || repayInProgress}>Cancel</button
         >
         {#if dashboardTab === "Lending"}
-          <button class="loan-modal-btn withdraw">Withdraw</button>
+          <button
+            class="loan-modal-btn withdraw"
+            disabled={withdrawInProgress}
+            on:click={() => handleWithdrawLoan(modalAsset)}
+          >
+            {#if withdrawInProgress}
+              <div class="btn-spinner"></div>
+              Processing...
+            {:else}
+              Withdraw
+            {/if}
+          </button>
         {:else if dashboardTab === "Borrowing"}
-          <button class="loan-modal-btn repay">Repay</button>
+          <button
+            class="loan-modal-btn repay"
+            disabled={repayInProgress}
+            on:click={() => handleRepayLoan(modalAsset)}
+          >
+            {#if repayInProgress}
+              <div class="btn-spinner"></div>
+              Processing...
+            {:else}
+              Repay
+            {/if}
+          </button>
         {/if}
       </div>
     </div>
+  </div>
+{/if}
+
+{#if showSuccessPopup}
+  <div
+    class="success-popup"
+    class:show={showSuccessPopup}
+    on:click={() => (showSuccessPopup = false)}
+  >
+    <div class="success-icon">{successIcon}</div>
+    <div class="success-message">{successMessage}</div>
   </div>
 {/if}
 
@@ -3646,6 +4187,73 @@
     }
   }
 
+  /* Success Popup Styles */
+  .success-popup {
+    position: fixed;
+    top: 2rem;
+    right: 2rem;
+    background: rgba(24, 18, 43, 0.95);
+    border-radius: 1rem;
+    padding: 1.2rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    z-index: 2000;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(162, 89, 255, 0.4);
+    backdrop-filter: blur(10px);
+    transform: translateX(calc(100% + 2rem));
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    max-width: 360px;
+    cursor: pointer;
+    animation:
+      slideIn 0.5s forwards,
+      slideOut 0.5s 3.5s forwards;
+  }
+
+  .success-popup.show {
+    transform: translateX(0);
+    opacity: 1;
+  }
+
+  @keyframes slideIn {
+    0% {
+      transform: translateX(calc(100% + 2rem));
+      opacity: 0;
+    }
+    100% {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideOut {
+    0% {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    100% {
+      transform: translateX(calc(100% + 2rem));
+      opacity: 0;
+    }
+  }
+
+  .success-icon {
+    font-size: 1.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.5rem;
+  }
+
+  .success-message {
+    font-size: 1rem;
+    color: #fff;
+    flex: 1;
+    line-height: 1.4;
+  }
+
   .lend-form-card {
     padding: 2rem 1.5rem 1.5rem 1.5rem;
     max-width: 420px;
@@ -3751,6 +4359,69 @@
     animation: spin 0.8s linear infinite;
     margin-right: 0.7em;
     vertical-align: middle;
+  }
+
+  /* Empty dashboard state */
+  .empty-dashboard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 4rem 1rem;
+    background: rgba(30, 20, 60, 0.2);
+    border-radius: 1rem;
+    border: 1px solid rgba(162, 89, 255, 0.2);
+    margin: 2rem 0;
+  }
+
+  .empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+    background: rgba(162, 89, 255, 0.1);
+    width: 6rem;
+    height: 6rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 30px rgba(162, 89, 255, 0.3);
+  }
+
+  .empty-dashboard h3 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin: 0 0 0.8rem 0;
+    background: linear-gradient(90deg, #c471f5 0%, #38b6ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-fill-color: transparent;
+  }
+
+  .empty-dashboard p {
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0 0 2rem 0;
+  }
+
+  .empty-action-btn {
+    background: linear-gradient(90deg, #a259ff 0%, #38b6ff 100%);
+    color: white;
+    border: none;
+    border-radius: 2rem;
+    padding: 0.9rem 2rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 15px rgba(162, 89, 255, 0.3);
+  }
+
+  .empty-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(162, 89, 255, 0.5);
+    background: linear-gradient(90deg, #38b6ff 0%, #a259ff 100%);
   }
   @keyframes spin {
     0% {
