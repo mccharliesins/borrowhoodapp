@@ -218,7 +218,7 @@
     align-items: center;
     justify-content: center;
     min-height: calc(100vh - 90px - 1.5rem); /* 90px navbar + margin */
-    width: 100vw;
+    width: 100%;
     text-align: center;
     background: radial-gradient(
       ellipse at 60% 40%,
