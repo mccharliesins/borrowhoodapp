@@ -119,6 +119,38 @@
     },
   ];
 
+  // Borrowing data
+  const borrowingAssets = [
+    {
+      icon: "🌟",
+      name: "XLM",
+      amount: "500",
+      value: "$200.25",
+      apy: "6.8%",
+      days: "15 days left",
+      duration: "60 days",
+      start: "Sep 10, 2023",
+      interest: "-$12.45",
+      due_date: "Nov 10, 2023",
+      repayable: "512.45 XLM",
+      collateral: "750 XLM",
+    },
+    {
+      icon: "💲",
+      name: "USDC",
+      amount: "300",
+      value: "$300.00",
+      apy: "9.5%",
+      days: "10 days left",
+      duration: "30 days",
+      start: "Oct 5, 2023",
+      interest: "-$7.25",
+      due_date: "Nov 5, 2023",
+      repayable: "307.25 USDC",
+      collateral: "450 USDC",
+    },
+  ];
+
   // Modal state
   let showLoanModal = false;
   let modalAsset: any = null;
@@ -735,8 +767,39 @@
         </div>
       {/if}
       {#if dashboardTab === "Borrowing"}
-        <div class="portfolio-table-wrap empty-borrowing">
-          <div class="empty-msg">No active borrowings yet.</div>
+        <div class="portfolio-table-wrap">
+          <table class="portfolio-table minimalist">
+            <thead>
+              <tr>
+                <th>Asset</th>
+                <th>Amount</th>
+                <th>Value (USD)</th>
+                <th>APY</th>
+                <th>Days Left</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              {#each borrowingAssets as asset}
+                <tr>
+                  <td
+                    ><span class="asset-icon">{asset.icon}</span>
+                    <span class="asset-name">{asset.name}</span></td
+                  >
+                  <td>{asset.amount}</td>
+                  <td>{asset.value}</td>
+                  <td class="apy negative">{asset.apy}</td>
+                  <td>{asset.days}</td>
+                  <td
+                    ><button
+                      class="details-btn"
+                      on:click={() => openLoanModal(asset)}>Details</button
+                    ></td
+                  >
+                </tr>
+              {/each}
+            </tbody>
+          </table>
         </div>
       {/if}
     </section>
@@ -1156,7 +1219,8 @@
     >
       <div class="loan-modal-header">
         <span id="loan-modal-title" class="loan-modal-title"
-          >Withdraw {modalAsset.name}</span
+          >{dashboardTab === "Lending" ? "Withdraw" : "Repay"}
+          {modalAsset.name}</span
         >
         <button class="loan-modal-close" on:click={closeLoanModal}
           >&times;</button
@@ -1166,12 +1230,19 @@
         <span class="loan-modal-asset-icon">{modalAsset.icon}</span>
         <div class="loan-modal-asset-info">
           <div class="loan-modal-asset-name">{modalAsset.name}</div>
-          <div class="loan-modal-asset-type">Lending Position</div>
+          <div class="loan-modal-asset-type">
+            {dashboardTab === "Lending" ? "Lending" : "Borrowing"} Position
+          </div>
         </div>
       </div>
       <div class="loan-modal-divider"></div>
       <div class="loan-modal-row">
-        <span>Amount Deposited:</span><span class="loan-modal-value"
+        <span
+          >{dashboardTab === "Lending"
+            ? "Amount Deposited:"
+            : "Amount Borrowed:"}</span
+        >
+        <span class="loan-modal-value"
           >{modalAsset.amount} {modalAsset.name}</span
         >
       </div>
@@ -1190,18 +1261,46 @@
           >{modalAsset.start}</span
         >
       </div>
+      {#if dashboardTab === "Borrowing" && modalAsset.due_date}
+        <div class="loan-modal-row">
+          <span>Due Date:</span><span class="loan-modal-value loan-modal-bold"
+            >{modalAsset.due_date}</span
+          >
+        </div>
+      {/if}
       <div class="loan-modal-row">
         <span>APY:</span><span class="loan-modal-value">{modalAsset.apy}</span>
       </div>
       <div class="loan-modal-row">
-        <span>Interest Earned:</span><span
-          class="loan-modal-value loan-modal-green">{modalAsset.interest}</span
+        <span
+          >{dashboardTab === "Lending"
+            ? "Interest Earned:"
+            : "Interest Cost:"}</span
+        >
+        <span
+          class="loan-modal-value {dashboardTab === 'Lending'
+            ? 'loan-modal-green'
+            : 'loan-modal-orange'}">{modalAsset.interest}</span
         >
       </div>
+      {#if dashboardTab === "Borrowing" && modalAsset.collateral}
+        <div class="loan-modal-row">
+          <span>Collateral:</span><span class="loan-modal-value"
+            >{modalAsset.collateral}</span
+          >
+        </div>
+      {/if}
       <div class="loan-modal-divider"></div>
       <div class="loan-modal-row loan-modal-total">
-        <span>Total Withdrawable:</span><span class="loan-modal-value"
-          >{modalAsset.withdrawable}</span
+        <span
+          >{dashboardTab === "Lending"
+            ? "Total Withdrawable:"
+            : "Total Repayable:"}</span
+        >
+        <span class="loan-modal-value"
+          >{dashboardTab === "Lending"
+            ? modalAsset.withdrawable
+            : modalAsset.repayable}</span
         >
       </div>
       <!-- Button row at bottom -->
@@ -1209,8 +1308,11 @@
         <button class="loan-modal-btn cancel" on:click={closeLoanModal}
           >Cancel</button
         >
-        <button class="loan-modal-btn repay">Repay</button>
-        <button class="loan-modal-btn withdraw">Withdraw</button>
+        {#if dashboardTab === "Lending"}
+          <button class="loan-modal-btn withdraw">Withdraw</button>
+        {:else if dashboardTab === "Borrowing"}
+          <button class="loan-modal-btn repay">Repay</button>
+        {/if}
       </div>
     </div>
   </div>
@@ -2208,6 +2310,10 @@
     color: #3ee86b;
     font-weight: 700;
   }
+  .apy.negative {
+    color: #ffb84d;
+    font-weight: 700;
+  }
   .empty-borrowing {
     padding: 2.5rem 0;
     text-align: center;
@@ -2349,6 +2455,9 @@
   }
   .loan-modal-green {
     color: #3ee86b;
+  }
+  .loan-modal-orange {
+    color: #ffb84d;
   }
   .loan-modal-total {
     font-size: 1.13rem;
