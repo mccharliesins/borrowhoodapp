@@ -211,11 +211,6 @@
     min-height: calc(100vh - 54px - 1.5rem); /* 54px navbar + margin */
     width: 100%;
     text-align: center;
-    background: radial-gradient(
-      ellipse at 60% 40%,
-      rgba(130, 71, 229, 0.18) 0%,
-      rgba(30, 0, 60, 0) 70%
-    );
     margin: 0;
     padding: 0 1rem;
     box-sizing: border-box;
