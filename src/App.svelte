@@ -1,5 +1,14 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import base64url from "base64url";
+  import {
+    account,
+    server,
+    native,
+    fundPubkey,
+    fundSigner,
+  } from "../../demo/src/lib/common";
+  import { Keypair } from "@stellar/stellar-sdk";
   // No additional logic needed for static navbar
   let activeTab = "Home";
   const tabs = ["Home", "Dashboard", "Lend/Borrow", "Wallet"];
@@ -56,6 +65,59 @@
     XLM: { lend: 5.2, borrow: 6.8 },
     USDC: { lend: 8.1, borrow: 9.5 },
   };
+
+  // Auth state
+  let contractId: string = "";
+  let walletPublicKey: string = "";
+  let isLoggedIn = false;
+
+  if (localStorage.hasOwnProperty("sp:keyId")) {
+    connect(localStorage.getItem("sp:keyId"));
+  }
+
+  async function register() {
+    const user = prompt("Give this passkey a name");
+    if (!user) return;
+    try {
+      const {
+        keyId: kid,
+        contractId: cid,
+        signedTx,
+        publicKey,
+      } = await account.createWallet("Borrowhood", user);
+      const res = await server.send(signedTx);
+      contractId = cid;
+      walletPublicKey = publicKey;
+      localStorage.setItem("sp:keyId", base64url(kid));
+      isLoggedIn = true;
+    } catch (err: any) {
+      alert(err.message);
+    }
+  }
+  async function connect(keyId_?: string) {
+    try {
+      const {
+        keyId: kid,
+        contractId: cid,
+        publicKey,
+      } = await account.connectWallet({
+        keyId: keyId_,
+        getContractId: (keyId) => server.getContractId({ keyId }),
+      });
+      contractId = cid;
+      walletPublicKey = publicKey;
+      localStorage.setItem("sp:keyId", base64url(kid));
+      isLoggedIn = true;
+    } catch (err: any) {
+      alert(err.message);
+    }
+  }
+  function reset() {
+    localStorage.removeItem("sp:keyId");
+    contractId = "";
+    walletPublicKey = "";
+    isLoggedIn = false;
+  }
 
   async function fetchPrice() {
     isLoadingPrice = true;
@@ -465,8 +527,17 @@
         creation with modern security.
       </p>
       <div class="auth-actions">
-        <button class="auth-btn primary">Login with Passkey</button>
-        <button class="auth-btn secondary">Create a New Account</button>
+        {#if isLoggedIn}
+          <button class="auth-btn primary" on:click={reset}>Logout</button>
+        {/if}
+        {#if !isLoggedIn}
+          <button class="auth-btn primary" on:click={connect}
+            >Login with Passkey</button
+          >
+          <button class="auth-btn secondary" on:click={register}
+            >Create a New Account</button
+          >
+        {/if}
       </div>
     </div>
   </div>
