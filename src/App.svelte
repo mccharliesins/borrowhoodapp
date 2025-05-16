@@ -67,7 +67,7 @@
     z-index: 10;
     overflow: hidden;
     min-width: 0;
-    margin: 1.5rem auto 2.5rem auto;
+    margin: 0 auto 1.5rem auto;
   }
   .logo {
     font-size: 2rem;
@@ -180,7 +180,7 @@
     .navbar {
       padding: 0 0.5rem;
       height: auto;
-      margin: 1rem auto 1.5rem auto;
+      margin: 0 auto 1rem auto;
     }
     nav {
       gap: 0.7rem;
@@ -212,11 +212,12 @@
     }
   }
   .hero {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: calc(100vh - 6rem);
+    min-height: calc(100vh - 90px - 1.5rem); /* 90px navbar + margin */
     width: 100vw;
     text-align: center;
     background: radial-gradient(
@@ -225,7 +226,8 @@
       rgba(30, 0, 60, 0) 70%
     );
     margin: 0;
-    padding: 2rem 1rem 3rem 1rem;
+    padding: 0 1rem;
+    box-sizing: border-box;
   }
   .hero-title {
     font-size: 3rem;
@@ -306,7 +308,7 @@
     }
     .hero {
       padding: 1.2rem 0.2rem 2rem 0.2rem;
-      min-height: calc(100vh - 4rem);
+      min-height: calc(100vh - 70px - 1rem);
     }
     .hero-actions {
       gap: 0.7rem;
