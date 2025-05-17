@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
+  import { slide } from "svelte/transition";
   import base64url from "base64url";
   import {
     account,
@@ -15,6 +16,16 @@
   const tabs = ["Home", "Dashboard", "Lend/Borrow", "Wallet"];
 
   let showAuthModal = false;
+  let mobileMenuOpen = false;
+
+  function toggleMobileMenu() {
+    mobileMenuOpen = !mobileMenuOpen;
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+  }
 
   // Wallet tab state
   let showSendModal = false;
@@ -1101,20 +1112,50 @@
 
 <div class="navbar">
   <div class="logo" style="font-family: 'New Rocker', cursive;">BORROWHOOD</div>
-  <nav>
-    {#each tabs as tab}
-      <div
-        class="nav-tab {activeTab === tab ? 'active' : ''}"
-        on:click={() => (activeTab = tab)}
-        on:keydown={(e) => e.key === "Enter" && (activeTab = tab)}
-        tabindex="0"
-        role="tab"
-        aria-selected={activeTab === tab}
-      >
-        {tab}
-        <span class="underline {activeTab === tab ? 'active' : ''}"></span>
-      </div>
-    {/each}
+  <nav class="desktop-nav">
+    <!-- Home tab is always accessible -->
+    <div
+      class="nav-tab {activeTab === 'Home' ? 'active' : ''}"
+      on:click={() => (activeTab = "Home")}
+      on:keydown={(e) => e.key === "Enter" && (activeTab = "Home")}
+      tabindex="0"
+      role="tab"
+      aria-selected={activeTab === "Home"}
+    >
+      Home
+      <span class="underline {activeTab === 'Home' ? 'active' : ''}"></span>
+    </div>
+
+    {#if isLoggedIn}
+      <!-- Show these tabs only when logged in -->
+      {#each tabs.filter((tab) => tab !== "Home") as tab}
+        <div
+          class="nav-tab {activeTab === tab ? 'active' : ''}"
+          on:click={() => (activeTab = tab)}
+          on:keydown={(e) => e.key === "Enter" && (activeTab = tab)}
+          tabindex="0"
+          role="tab"
+          aria-selected={activeTab === tab}
+        >
+          {tab}
+          <span class="underline {activeTab === tab ? 'active' : ''}"></span>
+        </div>
+      {/each}
+    {:else}
+      <!-- Show login-required tabs for non-logged users -->
+      {#each tabs.filter((tab) => tab !== "Home") as tab}
+        <div
+          class="nav-tab nav-tab-login-required"
+          on:click={openAuthModal}
+          on:keydown={(e) => e.key === "Enter" && openAuthModal()}
+          tabindex="0"
+          role="tab"
+        >
+          {tab}
+          <span class="login-indicator" title="Login required"></span>
+        </div>
+      {/each}
+    {/if}
   </nav>
   <div class="right-group">
     {#if isLoggedIn}
@@ -1122,8 +1163,88 @@
     {:else}
       <button class="login-btn" on:click={openAuthModal}>Sign Up/Login</button>
     {/if}
+    <button
+      class="mobile-menu-toggle"
+      on:click={toggleMobileMenu}
+      aria-label="Toggle menu"
+    >
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
   </div>
 </div>
+
+{#if mobileMenuOpen}
+  <div class="mobile-menu" transition:slide={{ duration: 300 }}>
+    <div class="mobile-menu-header">
+      <div class="logo">BORROWHOOD</div>
+      <button class="mobile-menu-close" on:click={toggleMobileMenu}
+        >&times;</button
+      >
+    </div>
+    <nav class="mobile-nav">
+      <!-- Always show Home tab for all users -->
+      <div
+        class="mobile-nav-tab {activeTab === 'Home' ? 'active' : ''}"
+        on:click={() => {
+          activeTab = "Home";
+          toggleMobileMenu();
+        }}
+      >
+        Home
+      </div>
+
+      {#if isLoggedIn}
+        <!-- Show these tabs only for logged in users -->
+        {#each tabs.filter((tab) => tab !== "Home") as tab}
+          <div
+            class="mobile-nav-tab {activeTab === tab ? 'active' : ''}"
+            on:click={() => {
+              activeTab = tab;
+              toggleMobileMenu();
+            }}
+          >
+            {tab}
+          </div>
+        {/each}
+      {:else}
+        <!-- For non-logged in users, show these tabs but with login prompts -->
+        {#each tabs.filter((tab) => tab !== "Home") as tab}
+          <div
+            class="mobile-nav-tab"
+            on:click={() => {
+              openAuthModal();
+              toggleMobileMenu();
+            }}
+          >
+            {tab} <span class="login-required">(Login required)</span>
+          </div>
+        {/each}
+      {/if}
+    </nav>
+    <div class="mobile-menu-footer">
+      {#if isLoggedIn}
+        <button
+          class="mobile-auth-btn"
+          on:click={() => {
+            reset();
+            toggleMobileMenu();
+          }}>Logout</button
+        >
+      {:else}
+        <button
+          class="mobile-auth-btn"
+          on:click={() => {
+            openAuthModal();
+            toggleMobileMenu();
+          }}>Sign Up/Login</button
+        >
+      {/if}
+    </div>
+  </div>
+  <div class="mobile-menu-overlay" on:click={toggleMobileMenu}></div>
+{/if}
 
 <main>
   {#if activeTab === "Home"}
@@ -2122,11 +2243,12 @@
     box-shadow: none;
     position: relative;
     z-index: 10;
-    overflow: hidden;
     min-width: 0;
     margin: 0 auto 1.5rem auto;
     border-bottom: 1px solid rgba(162, 89, 255, 0.2);
     flex-shrink: 0;
+    overflow-x: visible;
+    overflow-y: visible;
   }
   .logo {
     font-size: 1.9rem;
@@ -2146,6 +2268,16 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
     text-fill-color: transparent;
+    display: flex;
+    align-items: center;
+  }
+
+  @media (max-width: 360px) {
+    .logo {
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+      margin-right: 0.5rem;
+    }
   }
   nav {
     display: flex;
@@ -2192,6 +2324,31 @@
   .nav-tab.active .underline {
     opacity: 1;
     transform: scaleX(1);
+  }
+
+  .nav-tab-login-required {
+    color: rgba(255, 255, 255, 0.5);
+    position: relative;
+    cursor: pointer;
+  }
+
+  .nav-tab-login-required:hover {
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .login-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background-color: #ffb84d;
+    border-radius: 50%;
+    margin-left: 0.5rem;
+    position: relative;
+    top: -8px;
+  }
+
+  .nav-tab-login-required:hover .login-indicator {
+    background-color: #ff9500;
   }
   .right-group {
     display: flex;
@@ -2247,13 +2404,191 @@
     width: 100%;
     box-sizing: border-box;
   }
+  /* Mobile menu toggle button */
+  .mobile-menu-toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 28px;
+    height: 20px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    z-index: 20;
+    margin-left: 0.8rem;
+  }
+
+  .mobile-menu-toggle span {
+    display: block;
+    width: 100%;
+    height: 2px;
+    background: #fff;
+    border-radius: 3px;
+    transition: all 0.3s;
+    opacity: 0.9;
+  }
+
+  .mobile-menu-toggle:hover span {
+    opacity: 1;
+    background: #a259ff;
+  }
+
+  /* Mobile menu */
+  .mobile-menu {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 80%;
+    max-width: 300px;
+    height: 100vh;
+    background: rgba(18, 12, 36, 0.98);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 1000;
+    padding: 1.5rem 1.2rem;
+    overflow-y: auto;
+    box-shadow: -5px 0 30px rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid rgba(162, 89, 255, 0.2);
+  }
+
+  .mobile-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    z-index: 990;
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .mobile-menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid rgba(162, 89, 255, 0.15);
+  }
+
+  .mobile-menu-header .logo {
+    font-size: 1.3rem;
+    font-family: "New Rocker", cursive;
+    background: linear-gradient(90deg, #c471f5 0%, #38b6ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-fill-color: transparent;
+  }
+
+  .mobile-menu-close {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 1.8rem;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.2s;
+  }
+
+  .mobile-menu-close:hover {
+    background: rgba(162, 89, 255, 0.15);
+  }
+
+  .mobile-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .mobile-nav-tab {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    padding: 0.9rem 0.5rem;
+    margin-bottom: 0.3rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .mobile-nav-tab.active {
+    color: #fff;
+    background: rgba(162, 89, 255, 0.15);
+    font-weight: 700;
+    padding-left: 1rem;
+  }
+
+  .mobile-nav-tab:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .login-required {
+    font-size: 0.8rem;
+    opacity: 0.8;
+    color: #ffb84d;
+    margin-left: 0.5rem;
+    font-style: italic;
+  }
+
+  .mobile-menu-footer {
+    margin-top: auto;
+    padding-top: 2rem;
+  }
+
+  .mobile-auth-btn {
+    width: 100%;
+    padding: 0.9rem;
+    font-size: 1rem;
+    font-weight: 700;
+    background: linear-gradient(90deg, #a259ff 0%, #38b6ff 100%);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+  }
+
+  .mobile-auth-btn:hover {
+    background: linear-gradient(90deg, #38b6ff 0%, #a259ff 100%);
+    transform: translateY(-2px);
+  }
+
+  .mobile-menu-footer {
+    margin-top: auto;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(162, 89, 255, 0.15);
+  }
+
   @media (max-width: 900px) {
     .navbar {
       padding: 0 1.5rem;
       height: 60px;
       margin: 0 auto 1rem auto;
     }
-    nav {
+    .desktop-nav {
       gap: 1.5rem;
       margin-left: 0.5rem;
     }
@@ -2265,31 +2600,164 @@
       font-size: 0.9rem;
       padding: 0.5rem 1rem;
     }
+
+    /* Portfolio and Form Adjustments */
+    .portfolio-card,
+    .lend-form-card,
+    .rates-card,
+    .interest-summary {
+      padding: 1.5rem 1rem;
+    }
+
+    .lendborrow-main {
+      flex-direction: column;
+    }
+
+    .right-column {
+      width: 100%;
+      max-width: 100%;
+    }
   }
+
+  @media (max-width: 768px) {
+    .desktop-nav {
+      display: none;
+    }
+
+    .mobile-menu-toggle {
+      display: flex;
+      margin-left: 10px;
+    }
+
+    .login-btn {
+      margin-right: 0;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+    }
+
+    .navbar {
+      justify-content: space-between;
+      padding: 0 1rem;
+      height: 60px;
+    }
+
+    .logo {
+      font-size: 1.3rem;
+      margin-right: 0;
+    }
+
+    .right-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Home page adjustments */
+    .hero-title,
+    .hero-title-bold {
+      font-size: 2.3rem;
+    }
+
+    .hero-subtitle {
+      font-size: 1.1rem;
+    }
+
+    .why-grid,
+    .how-grid {
+      grid-template-columns: 1fr;
+    }
+
+    /* Form adjustments */
+    .loan-modal {
+      width: 90%;
+      padding: 1.5rem 1rem;
+    }
+
+    .duration-row {
+      flex-direction: column;
+    }
+
+    .duration-btn {
+      width: 100%;
+      margin-bottom: 0.5rem;
+    }
+
+    /* Success popup adjustments */
+    .success-popup {
+      max-width: 85%;
+      left: 50%;
+      transform: translateX(-50%);
+      right: auto;
+    }
+  }
+
   @media (max-width: 600px) {
     .navbar {
-      flex-direction: column;
-      height: auto;
-      padding: 0.7rem 1rem;
-      align-items: flex-start;
-      gap: 0.7rem;
+      height: 60px;
+      padding: 0 1rem;
     }
-    nav {
-      width: 100%;
-      justify-content: flex-start;
-      gap: 1rem;
-      margin-left: 0;
-      overflow-x: auto;
-      padding-bottom: 0.5rem;
+
+    .logo {
+      font-size: 1.3rem;
     }
-    .nav-tab {
-      font-size: 0.9rem;
-      padding: 0.5rem 0;
-    }
+
     .right-group {
-      align-self: flex-end;
-      margin-left: 0;
-      margin-top: -2.5rem;
+      gap: 0.5rem;
+    }
+
+    .login-btn {
+      font-size: 0.85rem;
+      padding: 0.4rem 0.8rem;
+    }
+
+    /* Header and content adjustments */
+    .section-title,
+    .portfolio-title,
+    .rates-title,
+    .wallet-title {
+      font-size: 1.5rem;
+    }
+
+    /* Form adjustments */
+    .form-row {
+      flex-direction: column;
+    }
+
+    .form-label-row {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .form-balance {
+      margin-top: 0.5rem;
+    }
+
+    /* Dashboard adjustments */
+    .portfolio-table-wrap {
+      overflow-x: auto;
+      margin: 0 -1rem;
+      padding: 0 1rem;
+    }
+
+    .empty-dashboard {
+      padding: 2rem 1rem;
+    }
+
+    /* Wallet adjustments */
+    .wallet-container {
+      gap: 1rem;
+    }
+
+    .wallet-header {
+      padding: 1.5rem 1rem;
+    }
+
+    .wallet-address {
+      font-size: 0.85rem;
+    }
+
+    .holdings-grid {
+      grid-template-columns: 1fr;
     }
   }
   .hero {
@@ -2749,6 +3217,68 @@
     }
     .cta-desc {
       font-size: 1.1rem;
+    }
+
+    /* Auth modal adjustments */
+    .auth-modal {
+      width: 90%;
+      max-width: 350px;
+      padding: 1.8rem 1.2rem;
+    }
+
+    /* Send modal adjustments */
+    .send-modal {
+      width: 90%;
+      padding: 1.5rem 1rem;
+    }
+
+    /* Token selection adjustments */
+    .token-option-selected,
+    .token-option {
+      padding: 0.7rem 0.8rem;
+    }
+
+    /* Loan modal adjustments */
+    .loan-modal-header {
+      margin-bottom: 1rem;
+    }
+
+    .loan-modal-title {
+      font-size: 1.3rem;
+    }
+
+    .loan-modal-asset {
+      gap: 0.8rem;
+      margin-bottom: 1rem;
+    }
+
+    .loan-modal-asset-icon {
+      font-size: 2rem;
+      width: 3rem;
+      height: 3rem;
+    }
+
+    .loan-modal-asset-name {
+      font-size: 1.1rem;
+    }
+
+    .loan-modal-row {
+      font-size: 0.95rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .loan-modal-value {
+      font-size: 0.95rem;
+    }
+
+    .loan-modal-actions {
+      margin-top: 1.5rem;
+      gap: 0.7rem;
+    }
+
+    .loan-modal-btn {
+      font-size: 0.95rem;
+      padding: 0.6rem 1.3rem;
     }
   }
   .modal-overlay {
@@ -3260,6 +3790,62 @@
       min-width: 0;
       max-width: 100%;
       margin: 0;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .lendborrow-section {
+      padding: 1.5rem 0.8rem;
+    }
+
+    .lend-form-card,
+    .rates-card {
+      padding: 1.5rem 1rem;
+    }
+
+    .form-title {
+      font-size: 1.05rem;
+    }
+
+    .form-label-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .form-balance {
+      text-align: left;
+      width: 100%;
+    }
+
+    .form-balance-right {
+      text-align: left;
+    }
+
+    .amount-input {
+      font-size: 1rem;
+      padding: 0.8rem;
+    }
+
+    .token-row {
+      flex-wrap: wrap;
+    }
+
+    .token-apy {
+      margin-left: auto;
+    }
+
+    .duration-row {
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .duration-btn {
+      width: 100%;
+    }
+
+    .custom-months-input-below {
+      margin-top: 0.5rem;
     }
   }
   .form-row {

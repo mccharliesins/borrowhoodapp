@@ -62,6 +62,12 @@
 
 ![Wallet](screenshots/wallet.png)
 
+## 🎬 Video Demos
+
+Watch our demo videos to see Borrowhood in action:
+
+- [Borrowhood - How to Lend & Borrow Crypto!](https://youtu.be/pxDQ5Xha0vA) - Learn how to use Borrowhood to lend and borrow cryptocurrency assets on the Stellar blockchain.
+
 ## 🚀 Getting Started
 
 ### Prerequisites
