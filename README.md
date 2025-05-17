@@ -128,6 +128,22 @@ npm run build
 yarn build
 ```
 
+## 👥 Team
+
+Meet the team behind **Borrowhood**:
+
+- **Shahrzad Masoumnia**  
+  [GitHub](https://github.com/shahrzadmn) | [LinkedIn](https://www.linkedin.com/in/shahrzadmasoumnia/)
+
+- **Venkateshwar Yadav**  
+  [GitHub](https://github.com/mccharliesins) | [LinkedIn](https://www.linkedin.com/in/mccharliesins/)
+
+- **Prisha Thakkar**  
+  [GitHub](https://github.com/PrishaTh) | [LinkedIn](https://www.linkedin.com/in/prisha-thakkar-913643302/)
+
+- **Robin Gershman**  
+  [GitHub]() | [LinkedIn](https://www.linkedin.com/in/gershmanrobin/)
+
 ## 💻 Tech Stack
 
 - **Frontend**: Svelte 5
