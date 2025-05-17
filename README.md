@@ -272,4 +272,4 @@ SOFTWARE.
 
 ---
 
-**Borrowhood** - _Decentralized Lending for Everyone_ - [https://borrowhood.com](https://borrowhood.com)
+**Borrowhood** - _Decentralized Lending for Everyone_ - [https://borrowhood.xyz](https://borrowhood.xyz)
