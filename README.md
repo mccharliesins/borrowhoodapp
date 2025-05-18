@@ -132,16 +132,16 @@ yarn build
 
 Meet the team behind **Borrowhood**:
 
-- **Shahrzad Masoumnia**  
+- **Shahrzad Masoumnia (Project Manager)**  
   [GitHub](https://github.com/shahrzadmn) | [LinkedIn](https://www.linkedin.com/in/shahrzadmasoumnia/)
 
-- **Venkateshwar Yadav**  
+- **Venkateshwar Yadav (Frontend & Passkey Integration)**  
   [GitHub](https://github.com/mccharliesins) | [LinkedIn](https://www.linkedin.com/in/mccharliesins/)
 
-- **Prisha Thakkar**  
+- **Prisha Thakkar (Presentation Manager)**  
   [GitHub](https://github.com/PrishaTh) | [LinkedIn](https://www.linkedin.com/in/prisha-thakkar-913643302/)
 
-- **Robin Gershman**  
+- **Robin Gershman (Smart Contracts)**  
   [GitHub]() | [LinkedIn](https://www.linkedin.com/in/gershmanrobin/)
 
 ## 💻 Tech Stack
