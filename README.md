@@ -132,7 +132,7 @@ yarn build
 
 Meet the team behind **Borrowhood**:
 
-- **Shahrzad Masoumnia (Project Manager)**  
+- **Shahrzad Masoumnia (Product Manager & UX)**  
   [GitHub](https://github.com/shahrzadmn) | [LinkedIn](https://www.linkedin.com/in/shahrzadmasoumnia/)
 
 - **Venkateshwar Yadav (Frontend & Passkey Integration)**  
