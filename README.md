@@ -142,7 +142,7 @@ Meet the team behind **Borrowhood**:
   [GitHub](https://github.com/PrishaTh) | [LinkedIn](https://www.linkedin.com/in/prisha-thakkar-913643302/)
 
 - **Robin Gershman (Smart Contracts)**  
-  [GitHub]() | [LinkedIn](https://www.linkedin.com/in/gershmanrobin/)
+  [GitHub](https://github.com/R0B11N) | [LinkedIn](https://www.linkedin.com/in/gershmanrobin/)
 
 ## 💻 Tech Stack
 
